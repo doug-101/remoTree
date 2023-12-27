@@ -1,0 +1,151 @@
+// file_interface.dart, top level model for file connections.
+// remoTree, an sftp-based remote file manager.
+// Copyright (c) 2023, Douglas W. Bell.
+// Free software, GPL v2 or later.
+
+import 'dart:io';
+import 'package:dartssh2/dartssh2.dart';
+import 'package:flutter/foundation.dart';
+//import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'file_item.dart';
+import 'host_data.dart';
+
+abstract class FileInterface extends ChangeNotifier {
+  String? currentConnectName;
+  String? rootPath;
+  final rootItems = <FileItem>[];
+
+  Future<void> fetchRootFiles();
+
+  Future<void> toggleItemOpen(FileItem item);
+
+  List<String> splitRootPath() {
+    if (rootPath == null) return <String>[];
+    final parts = rootPath!.split('/');
+    // Use connection nme for / directory.
+    parts[0] = currentConnectName!;
+    return parts;
+  }
+
+  void changeRootPath(String newPath) {
+    rootPath = newPath;
+    fetchRootFiles();
+  }
+
+  void closeConnection() {
+    currentConnectName = null;
+    rootPath = null;
+    rootItems.clear();
+  }
+}
+
+class RemoteInterface extends FileInterface {
+  String? currentConnectName;
+  SSHClient? sshClient;
+  SftpClient? _sftpClient;
+  String? rootPath;
+  final rootItems = <FileItem>[];
+
+  RemoteInterface();
+
+  Future<void> connectToClient({
+    required HostData hostData,
+    required SSHPasswordRequestHandler passwordFunction,
+  }) async {
+    sshClient = SSHClient(
+      await SSHSocket.connect(hostData.address, 22),
+      username: hostData.userName,
+      onPasswordRequest: passwordFunction,
+    );
+    _sftpClient = await sshClient!.sftp();
+    rootPath = await _sftpClient!.absolute('.');
+    currentConnectName = hostData.displayName;
+    fetchRootFiles();
+  }
+
+  @override
+  Future<void> fetchRootFiles() async {
+    rootItems.clear();
+    final sftpItems = await _sftpClient!.listdir(rootPath!);
+    rootItems.addAll(sftpItems.map((i) => FileItem.fromSftp(rootPath!, i)));
+    rootItems.sort(
+      (a, b) => a.filename.toLowerCase().compareTo(b.filename.toLowerCase()),
+    );
+    notifyListeners();
+  }
+
+  @override
+  Future<void> toggleItemOpen(FileItem item) async {
+    if (item.type == FileType.directory || item.type == FileType.link) {
+      item.isOpen = !item.isOpen;
+      if (item.isOpen && item.children.isEmpty) {
+        final path = '${item.path}/${item.filename}';
+        final sftpItems = await _sftpClient!.listdir(path);
+        item.children.addAll(sftpItems.map((i) => FileItem.fromSftp(path, i)));
+        item.children.sort(
+          (a, b) =>
+              a.filename.toLowerCase().compareTo(b.filename.toLowerCase()),
+        );
+      }
+      notifyListeners();
+    }
+  }
+
+  @override
+  void closeConnection() {
+    super.closeConnection();
+    _sftpClient?.close();
+    sshClient?.close();
+    _sftpClient = null;
+    sshClient = null;
+    notifyListeners();
+  }
+}
+
+class LocalInterface extends FileInterface {
+  String? currentConnectName = 'Local';
+  String? rootPath;
+  final rootItems = <FileItem>[];
+
+  LocalInterface() {
+    fetchRootFiles();
+  }
+
+  Future<void> fetchRootFiles() async {
+    if (rootPath == null) {
+      if (Platform.isAndroid) {
+        rootPath = (await getExternalStorageDirectory())?.path;
+      }
+      if (rootPath == null) {
+        rootPath = (await getApplicationDocumentsDirectory()).path;
+      }
+      if (rootPath!.endsWith('/')) {
+        rootPath = rootPath!.substring(0, rootPath!.length - 1);
+      }
+    }
+    rootItems.clear();
+    final items = Directory(rootPath!).listSync();
+    rootItems.addAll(items.map((i) => FileItem.fromFileEntity(i)));
+    rootItems.sort(
+      (a, b) => a.filename.toLowerCase().compareTo(b.filename.toLowerCase()),
+    );
+    notifyListeners();
+  }
+
+  Future<void> toggleItemOpen(FileItem item) async {
+    if (item.type == FileType.directory || item.type == FileType.link) {
+      item.isOpen = !item.isOpen;
+      if (item.isOpen && item.children.isEmpty) {
+        final path = '${item.path}/${item.filename}';
+        final items = Directory(path).listSync();
+        item.children.addAll(items.map((i) => FileItem.fromFileEntity(i)));
+        item.children.sort(
+          (a, b) =>
+              a.filename.toLowerCase().compareTo(b.filename.toLowerCase()),
+        );
+      }
+      notifyListeners();
+    }
+  }
+}

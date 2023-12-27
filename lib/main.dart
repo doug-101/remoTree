@@ -7,10 +7,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'model/connection.dart';
+import 'gui/frame_view.dart';
+import 'model/file_interface.dart';
+import 'model/host_list.dart';
 import 'model/theme_model.dart';
-import 'gui/connect_select.dart';
-import 'gui/tree_view.dart';
 
 /// [prefs] is the global shared_preferences instance.
 late final SharedPreferences prefs;
@@ -45,7 +45,13 @@ Future<void> main(List<String> cmdLineArgs) async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider<Connection>(create: (_) => Connection()),
+        ChangeNotifierProvider<HostList>(create: (_) => HostList()),
+        ChangeNotifierProvider<RemoteInterface>(
+          create: (_) => RemoteInterface(),
+        ),
+        ChangeNotifierProvider<LocalInterface>(
+          create: (_) => LocalInterface(),
+        ),
         ChangeNotifierProvider<ThemeModel>(create: (_) => ThemeModel()),
       ],
       child: Consumer<ThemeModel>(
@@ -53,20 +59,8 @@ Future<void> main(List<String> cmdLineArgs) async {
           return MaterialApp(
             title: 'remoTree',
             theme: themeModel.getTheme(),
+            home: FrameView(),
             debugShowCheckedModeBanner: false,
-            initialRoute: '/connectSelect',
-            onGenerateRoute: (settings) {
-              switch (settings.name) {
-                case '/connectSelect':
-                  return MaterialPageRoute(builder: (context) {
-                    return ConnectSelect();
-                  });
-                case '/treeView':
-                  return MaterialPageRoute(builder: (context) {
-                    return TreeView();
-                  });
-              }
-            },
           );
         },
       ),

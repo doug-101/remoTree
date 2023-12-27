@@ -1,34 +1,34 @@
-// connect_edit.dart, a view to edit connection data.
+// host_edit.dart, a view to edit connection data.
 // remoTree, an sftp-based remote file manager.
 // Copyright (c) 2023, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../model/connect_data.dart';
-import '../model/connection.dart';
+import '../model/host_list.dart';
+import '../model/host_data.dart';
 
-class ConnectEdit extends StatefulWidget {
-  ConnectData? origConnectData;
+class HostEdit extends StatefulWidget {
+  HostData? origHostData;
 
-  ConnectEdit({super.key, this.origConnectData});
+  HostEdit({super.key, this.origHostData});
 
   @override
-  State<ConnectEdit> createState() => _ConnectEditState();
+  State<HostEdit> createState() => _HostEditState();
 }
 
-class _ConnectEditState extends State<ConnectEdit> {
+class _HostEditState extends State<HostEdit> {
   final _formKey = GlobalKey<FormState>();
   bool _cancelFlag = false;
-  ConnectData? newConnectData;
+  HostData? newHostData;
 
   @override
   void initState() {
     super.initState();
-    if (widget.origConnectData != null) {
-      newConnectData = ConnectData.copy(widget.origConnectData!);
+    if (widget.origHostData != null) {
+      newHostData = HostData.copy(widget.origHostData!);
     } else {
-      newConnectData = ConnectData('', '', '');
+      newHostData = HostData('', '', '');
     }
   }
 
@@ -36,11 +36,11 @@ class _ConnectEditState extends State<ConnectEdit> {
     if (_cancelFlag) return true;
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      final model = Provider.of<Connection>(context, listen: false);
-      if (widget.origConnectData != null) {
-        model.replaceConnectData(widget.origConnectData!, newConnectData!);
+      final model = Provider.of<HostList>(context, listen: false);
+      if (widget.origHostData != null) {
+        model.replaceHostData(widget.origHostData!, newHostData!);
       } else {
-        model.addConnectData(newConnectData!);
+        model.addHostData(newHostData!);
       }
       return true;
     }
@@ -51,9 +51,9 @@ class _ConnectEditState extends State<ConnectEdit> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.origConnectData != null
-            ? 'Edit Connection Data'
-            : 'New Connection Data'),
+        title: Text(widget.origHostData != null
+            ? 'Edit Host Data'
+            : 'New Host Data'),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.close),
@@ -78,7 +78,7 @@ class _ConnectEditState extends State<ConnectEdit> {
                   TextFormField(
                     decoration: InputDecoration(labelText: 'Display Name'),
                     autofocus: true,
-                    initialValue: widget.origConnectData?.displayName,
+                    initialValue: widget.origHostData?.displayName,
                     validator: (String? text) {
                       if (text != null && text.isEmpty) {
                         return 'Cannot be empty';
@@ -87,13 +87,13 @@ class _ConnectEditState extends State<ConnectEdit> {
                     },
                     onSaved: (String? text) {
                       if (text != null) {
-                        newConnectData!.displayName = text;
+                        newHostData!.displayName = text;
                       }
                     },
                   ),
                   TextFormField(
                     decoration: InputDecoration(labelText: 'User Name'),
-                    initialValue: widget.origConnectData?.userName,
+                    initialValue: widget.origHostData?.userName,
                     validator: (String? text) {
                       if (text != null && text.isEmpty) {
                         return 'Cannot be empty';
@@ -102,14 +102,14 @@ class _ConnectEditState extends State<ConnectEdit> {
                     },
                     onSaved: (String? text) {
                       if (text != null) {
-                        newConnectData!.userName = text;
+                        newHostData!.userName = text;
                       }
                     },
                   ),
                   TextFormField(
                     decoration: InputDecoration(labelText: 'Address'),
                     autofocus: true,
-                    initialValue: widget.origConnectData?.address,
+                    initialValue: widget.origHostData?.address,
                     validator: (String? text) {
                       if (text != null && text.isEmpty) {
                         return 'Cannot be empty';
@@ -118,7 +118,7 @@ class _ConnectEditState extends State<ConnectEdit> {
                     },
                     onSaved: (String? text) {
                       if (text != null) {
-                        newConnectData!.address = text;
+                        newHostData!.address = text;
                       }
                     },
                   ),

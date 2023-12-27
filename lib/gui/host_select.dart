@@ -1,4 +1,4 @@
-// connect_select.dart, a view showing available servers.
+// host_select.dart, a view showing available servers.
 // remoTree, an sftp-based remote file manager.
 // Copyright (c) 2023, Douglas W. Bell.
 // Free software, GPL v2 or later.
@@ -6,30 +6,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'common_dialogs.dart' as commonDialogs;
-import 'connect_edit.dart';
-import 'tree_view.dart';
-import '../model/connection.dart';
+import 'host_edit.dart';
+import '../model/file_interface.dart';
+import '../model/host_list.dart';
 
 enum MenuItems { edit, delete }
 
-class ConnectSelect extends StatelessWidget {
-  ConnectSelect({super.key});
+class HostSelect extends StatelessWidget {
+  HostSelect({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('remoTree'),
+        title: Text('remoTree - Remote'),
         actions: <Widget>[
           IconButton(
-            // New connection command.
+            // New host command.
             icon: const Icon(Icons.add_box),
-            tooltip: 'New connection',
+            tooltip: 'New host',
             onPressed: () async {
               await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ConnectEdit(),
+                  builder: (context) => HostEdit(),
                 ),
               );
             },
@@ -41,11 +41,11 @@ class ConnectSelect extends StatelessWidget {
         child: Center(
           child: SizedBox(
             width: 600.0,
-            child: Consumer<Connection>(
+            child: Consumer<HostList>(
               builder: (context, model, child) {
                 return ListView(
                   children: <Widget>[
-                    for (var data in model.sortedConnectData)
+                    for (var data in model.sortedHostData)
                       Card(
                         child: ListTile(
                           title: Text(data.displayName),
@@ -58,8 +58,8 @@ class ConnectSelect extends StatelessWidget {
                                   await Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => ConnectEdit(
-                                        origConnectData: data,
+                                      builder: (context) => HostEdit(
+                                        origHostData: data,
                                       ),
                                     ),
                                   );
@@ -71,7 +71,7 @@ class ConnectSelect extends StatelessWidget {
                                     label: 'Delete this entry?',
                                   );
                                   if (deleteOk ?? false) {
-                                    model.deleteConnectData(data);
+                                    model.deleteHostData(data);
                                   }
                               }
                             },
@@ -87,8 +87,12 @@ class ConnectSelect extends StatelessWidget {
                             ],
                           ),
                           onTap: () async {
-                            await model.connectToClient(
-                              connectData: data,
+                            final interfaceModel = Provider.of<RemoteInterface>(
+                              context,
+                              listen: false,
+                            );
+                            await interfaceModel.connectToClient(
+                              hostData: data,
                               passwordFunction: () async {
                                 return commonDialogs.textDialog(
                                   context: context,
@@ -97,7 +101,10 @@ class ConnectSelect extends StatelessWidget {
                                 );
                               },
                             );
-                            Navigator.pushNamed(context, '/treeView');
+                            Navigator.pushNamed(
+                              context,
+                              '/rem_tree',
+                            );
                           },
                         ),
                       ),
