@@ -12,6 +12,7 @@ import '../model/host_list.dart';
 
 enum MenuItems { edit, delete }
 
+/// Shows and allows selection of available hosts.
 class HostSelect extends StatelessWidget {
   HostSelect({super.key});
 

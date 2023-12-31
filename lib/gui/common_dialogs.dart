@@ -208,6 +208,7 @@ Future<String?> textDialog({
   );
 }
 
+/// Show a standard about dialog.
 Future<void> aboutDialog({
   required BuildContext context,
 }) async {

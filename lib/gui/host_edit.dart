@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../model/host_list.dart';
 import '../model/host_data.dart';
 
+/// A class for editibng and new host connection data.
 class HostEdit extends StatefulWidget {
   HostData? origHostData;
 
@@ -32,6 +33,7 @@ class _HostEditState extends State<HostEdit> {
     }
   }
 
+  /// Save the host data at exit if applicable.
   Future<bool> updateOnPop() async {
     if (_cancelFlag) return true;
     if (_formKey.currentState!.validate()) {

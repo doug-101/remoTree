@@ -3,6 +3,7 @@
 // Copyright (c) 2023, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
+/// Stores all info needed for an SSH/SFTP server.
 class HostData {
   String displayName;
   String userName;
@@ -10,6 +11,7 @@ class HostData {
 
   HostData(this.displayName, this.userName, this.address);
 
+  /// Constructor for storage in preferences.
   HostData.fromJson(Map<String, dynamic> jsonData)
       : displayName = jsonData['display_name'],
         userName = jsonData['user_name'],
@@ -22,6 +24,7 @@ class HostData {
 
   String get nameAndAddress => '$userName@$address';
 
+  /// Save to JSON for preference storage.
   Map<String, dynamic> toJson() {
     var result = <String, dynamic>{
       'display_name': displayName,
@@ -31,6 +34,7 @@ class HostData {
     return result;
   }
 
+  /// Defined to allow use in a set or map.
   @override
   bool operator ==(Object other) {
     return other is HostData &&
@@ -39,6 +43,7 @@ class HostData {
         this.address == other.address;
   }
 
+  /// Defined to allow use in a set or map.
   @override
   int get hashCode =>
       Object.hash(this.displayName, this.userName, this.address);

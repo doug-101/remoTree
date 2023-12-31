@@ -15,9 +15,6 @@ import 'model/theme_model.dart';
 /// [prefs] is the global shared_preferences instance.
 late final SharedPreferences prefs;
 
-/// This is initially false to avoid saving window geometry during setup.
-bool allowSaveWindowGeo = false;
-
 Future<void> main(List<String> cmdLineArgs) async {
   LicenseRegistry.addLicense(
     () => Stream<LicenseEntry>.value(
@@ -45,14 +42,18 @@ Future<void> main(List<String> cmdLineArgs) async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider<HostList>(create: (_) => HostList()),
+        ChangeNotifierProvider<HostList>(
+          create: (_) => HostList(),
+        ),
         ChangeNotifierProvider<RemoteInterface>(
           create: (_) => RemoteInterface(),
         ),
         ChangeNotifierProvider<LocalInterface>(
           create: (_) => LocalInterface(),
         ),
-        ChangeNotifierProvider<ThemeModel>(create: (_) => ThemeModel()),
+        ChangeNotifierProvider<ThemeModel>(
+          create: (_) => ThemeModel(),
+        ),
       ],
       child: Consumer<ThemeModel>(
         builder: (context, themeModel, child) {

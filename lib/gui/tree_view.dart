@@ -4,12 +4,16 @@
 // Free software, GPL v2 or later.
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'common_dialogs.dart' as commonDialogs;
 import '../main.dart' show prefs;
 import '../model/file_interface.dart';
 import '../model/file_item.dart';
 
+/// The main tree view for remote and local file display.
+///
+/// Uses generics to select remote or local models.
 class TreeView<T extends FileInterface> extends StatefulWidget {
   TreeView({super.key});
 
@@ -46,6 +50,7 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
               onPopInvoked: (bool didPop) {
                 model.closeConnection();
               },
+              // The breadcrumb navigation area.
               child: Column(
                 children: <Widget>[
                   SizedBox(
@@ -71,6 +76,7 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                             }),
                           );
                         } else {
+                          // Plain text for separators and last current item.
                           return Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
@@ -99,6 +105,7 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
     );
   }
 
+  /// The list of indedted tree widgets.
   List<Widget> _treeWidgets(FileInterface model) {
     final treeWidgets = <Widget>[];
     for (var root in model.rootItems) {
@@ -107,6 +114,10 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
         showDotFiles: prefs.getBool('show_dot_files') ?? false,
       )) {
         final isItemSelected = selectedItems.contains(item);
+        final dateString = DateTime.now().difference(item.modTime).inDays < 183
+            ? DateFormat('MMM dd HH:mm').format(item.modTime)
+            : DateFormat('MMM dd  yyyy').format(item.modTime);
+        final sizeString = item.fileSize != null ? ', ${item.fileSize!}' : '';
         treeWidgets.add(
           Padding(
             padding:
@@ -141,12 +152,22 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                   Expanded(
                     child: Padding(
                       padding: EdgeInsets.only(left: 4.0),
-                      child: Text(
-                        item.filename,
-                        style: TextStyle(
-                          color: isItemSelected
-                              ? Theme.of(context).colorScheme.secondary
-                              : null,
+                      child: Text.rich(
+                        TextSpan(
+                          text: item.filename,
+                          style: TextStyle(
+                            color: isItemSelected
+                                ? Theme.of(context).colorScheme.secondary
+                                : null,
+                          ),
+                          children: <TextSpan>[
+                            TextSpan(
+                              text: '\n${dateString}${sizeString}',
+                              style: TextStyle(
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

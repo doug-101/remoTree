@@ -1,4 +1,4 @@
-// file_interface.dart, top level model for file connections.
+// file_interface.dart, models for remote and local file connections.
 // remoTree, an sftp-based remote file manager.
 // Copyright (c) 2023, Douglas W. Bell.
 // Free software, GPL v2 or later.
@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'file_item.dart';
 import 'host_data.dart';
 
+/// Base class common to remote and local classes.
 abstract class FileInterface extends ChangeNotifier {
   String? currentConnectName;
   String? rootPath;
@@ -20,19 +21,22 @@ abstract class FileInterface extends ChangeNotifier {
 
   Future<void> toggleItemOpen(FileItem item);
 
+  /// Return path elements for use in breadcrumb navigation.
   List<String> splitRootPath() {
     if (rootPath == null) return <String>[];
     final parts = rootPath!.split('/');
-    // Use connection nme for / directory.
+    // Use connection name for / directory.
     parts[0] = currentConnectName!;
     return parts;
   }
 
+  /// Change to the new root path and reload contents.
   void changeRootPath(String newPath) {
     rootPath = newPath;
     fetchRootFiles();
   }
 
+  /// Reset stored items to initial values.
   void closeConnection() {
     currentConnectName = null;
     rootPath = null;
@@ -40,6 +44,7 @@ abstract class FileInterface extends ChangeNotifier {
   }
 }
 
+/// Superclass for SFTP connections.
 class RemoteInterface extends FileInterface {
   String? currentConnectName;
   SSHClient? sshClient;
@@ -49,6 +54,7 @@ class RemoteInterface extends FileInterface {
 
   RemoteInterface();
 
+  /// Make connection to given host and reload contents.
   Future<void> connectToClient({
     required HostData hostData,
     required SSHPasswordRequestHandler passwordFunction,
@@ -64,6 +70,7 @@ class RemoteInterface extends FileInterface {
     fetchRootFiles();
   }
 
+  /// Retrieve file info at the root level.
   @override
   Future<void> fetchRootFiles() async {
     rootItems.clear();
@@ -75,6 +82,7 @@ class RemoteInterface extends FileInterface {
     notifyListeners();
   }
 
+  /// Toggle given directory open and load children if needed.
   @override
   Future<void> toggleItemOpen(FileItem item) async {
     if (item.type == FileType.directory || item.type == FileType.link) {
@@ -92,6 +100,7 @@ class RemoteInterface extends FileInterface {
     }
   }
 
+  /// Reset stored items to initial values.
   @override
   void closeConnection() {
     super.closeConnection();
@@ -108,19 +117,23 @@ class LocalInterface extends FileInterface {
   String? rootPath;
   final rootItems = <FileItem>[];
 
+  /// Load local file info at startup.
   LocalInterface() {
     fetchRootFiles();
   }
 
+  /// Retrieve file info at the root level.
   Future<void> fetchRootFiles() async {
     if (rootPath == null) {
       if (Platform.isAndroid) {
         rootPath = (await getExternalStorageDirectory())?.path;
       }
       if (rootPath == null) {
+        // Use app directory if external storage isn't available.
         rootPath = (await getApplicationDocumentsDirectory()).path;
       }
       if (rootPath!.endsWith('/')) {
+        // Remove trailing separator to make usable in [splitRootPath].
         rootPath = rootPath!.substring(0, rootPath!.length - 1);
       }
     }
@@ -133,6 +146,7 @@ class LocalInterface extends FileInterface {
     notifyListeners();
   }
 
+  /// Toggle given directory open and load children if needed.
   Future<void> toggleItemOpen(FileItem item) async {
     if (item.type == FileType.directory || item.type == FileType.link) {
       item.isOpen = !item.isOpen;

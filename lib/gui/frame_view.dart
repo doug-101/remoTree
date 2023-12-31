@@ -1,4 +1,4 @@
-// frame_view.dart, the framework view toglling remote and local views.
+// frame_view.dart, the framework view toggling remote and local views.
 // remoTree, an sftp-based remote file manager.
 // Copyright (c) 2023, Douglas W. Bell.
 // Free software, GPL v2 or later.
@@ -9,6 +9,7 @@ import 'tree_view.dart';
 import '../model/file_interface.dart';
 import '../model/file_item.dart';
 
+/// The framework view that shows a bottom nav bar.
 class FrameView extends StatefulWidget {
   FrameView({super.key});
 
@@ -44,6 +45,7 @@ class _FrameViewState extends State<FrameView> {
         index: remoteShown ? 0 : 1,
         sizing: StackFit.passthrough,
         children: <Widget>[
+          // A nested navigator to manage views for the remote tab view.
           Navigator(
             onGenerateRoute: (RouteSettings settings) {
               return MaterialPageRoute(
