@@ -1,6 +1,6 @@
 // file_item.dart, contains data about each remote file.
 // remoTree, an sftp-based remote file manager.
-// Copyright (c) 2023, Douglas W. Bell.
+// Copyright (c) 2024, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
 import 'dart:io';
@@ -16,7 +16,7 @@ class FileItem {
   final FileType type;
   late final DateTime modTime;
   // [fileSize] is null for a directory or link.
-  String? fileSize;
+  int? fileSize;
   final children = <FileItem>[];
   bool isOpen = false;
   int level = 0;
@@ -36,7 +36,7 @@ class FileItem {
     final stat = file.statSync();
     modTime = stat.modified;
     if (type == FileType.file) {
-      fileSize = sizeStringFromBytes(stat.size);
+      fileSize = stat.size;
     }
   }
 
@@ -53,13 +53,31 @@ class FileItem {
       (fileInfo.attr.modifyTime ?? 0) * 1000,
     );
     if (type == FileType.file) {
-      fileSize = sizeStringFromBytes(fileInfo.attr.size ?? 0);
+      fileSize = fileInfo.attr.size ?? 0;
+    }
+  }
+
+  /// Return the file size as a human readable string.
+  ///
+  /// Returns a zero size if [fileSize] is null.
+  String get fileSizeString {
+    switch (fileSize ?? 0) {
+      case < 1000:
+        return '${fileSize ?? 0}B';
+      case < 1e6:
+        return '${((fileSize ?? 0) / 1000).toStringAsFixed(1)}K';
+      case < 1e9:
+        return '${((fileSize ?? 0) / 1e6).toStringAsFixed(1)}M';
+      case < 1e12:
+        return '${((fileSize ?? 0) / 1e9).toStringAsFixed(1)}G';
+      default:
+        return '${((fileSize ?? 0) / 1e12).toStringAsFixed(1)}T';
     }
   }
 }
 
-/// Return items from the tree if open.
-Iterable<FileItem> itemGenerator(FileItem item,
+/// Return items from the tree if open and assign indent levels.
+Iterable<FileItem> openItemGenerator(FileItem item,
     {bool showDotFiles = false, int level = 0}) sync* {
   item.level = level;
   if (item.filename != '.' &&
@@ -68,24 +86,25 @@ Iterable<FileItem> itemGenerator(FileItem item,
     yield item;
     if (item.isOpen) {
       for (var child in item.children) {
-        yield* itemGenerator(child, level: level + 1);
+        yield* openItemGenerator(
+          child,
+          showDotFiles: showDotFiles,
+          level: level + 1,
+        );
       }
     }
   }
 }
 
-/// Return a human readable file size string.
-String sizeStringFromBytes(int bytes) {
-  switch (bytes) {
-    case < 1000:
-      return '${bytes}B';
-    case < 1e6:
-      return '${(bytes / 1000).toStringAsFixed(1)}K';
-    case < 1e9:
-      return '${(bytes / 1e6).toStringAsFixed(1)}M';
-    case < 1e12:
-      return '${(bytes / 1e9).toStringAsFixed(1)}G';
-    default:
-      return '${(bytes / 1e12).toStringAsFixed(1)}T';
+/// Return all items from the tree.
+Iterable<FileItem> allItemGenerator(FileItem item,
+    {bool withChilrenOnly = false}) sync* {
+  if (item.filename != '.' &&
+      item.filename != '..' &&
+      (!withChilrenOnly || item.children.isNotEmpty)) {
+    yield item;
+    for (var child in item.children) {
+      yield* allItemGenerator(child, withChilrenOnly: withChilrenOnly);
+    }
   }
 }

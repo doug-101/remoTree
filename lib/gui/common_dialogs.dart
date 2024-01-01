@@ -1,12 +1,13 @@
 // common_dialogs.dart, several common dialog functions.
 // remoTree, an sftp-based remote file manager.
-// Copyright (c) 2023, Douglas W. Bell.
+// Copyright (c) 2024, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../main.dart' show prefs;
+import '../model/sort_rule.dart';
 
 final _filenameEditKey = GlobalKey<FormFieldState>();
 final _textEditKey = GlobalKey<FormFieldState>();
@@ -86,6 +87,79 @@ Future<String?> choiceDialog({
               },
               child: Text(choice),
             ),
+        ],
+      );
+    },
+  );
+}
+
+/// Dialog to select sorting method.
+Future<SortRule?> sortRuleDialog({
+  required BuildContext context,
+  required SortRule initialRule,
+}) async {
+  return showDialog<SortRule>(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      var sortType = initialRule.sortType;
+      var sortDir = initialRule.sortDirection;
+      return AlertDialog(
+        title: Text('Sorting Rule'),
+        content: StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                for (var item in SortType.values)
+                  RadioListTile<SortType>(
+                    title: Text(
+                      '${item.name[0].toUpperCase()}${item.name.substring(1)}',
+                    ),
+                    value: item,
+                    groupValue: sortType,
+                    onChanged: (SortType? value) {
+                      if (value != null) {
+                        setState(() {
+                          sortType = value;
+                        });
+                      }
+                    },
+                  ),
+                Divider(),
+                for (var item in SortDirection.values)
+                  RadioListTile<SortDirection>(
+                    title: Text(
+                      '${item.name[0].toUpperCase()}${item.name.substring(1)}',
+                    ),
+                    value: item,
+                    groupValue: sortDir,
+                    onChanged: (SortDirection? value) {
+                      if (value != null) {
+                        setState(() {
+                          sortDir = value;
+                        });
+                      }
+                    },
+                  ),
+              ],
+            );
+          },
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('OK'),
+            onPressed: () {
+              Navigator.pop(
+                context,
+                SortRule(sortType, sortDir),
+              );
+            },
+          ),
+          TextButton(
+            child: const Text('CANCEL'),
+            onPressed: () => Navigator.pop(context, null),
+          ),
         ],
       );
     },
@@ -217,7 +291,7 @@ Future<void> aboutDialog({
     context: context,
     applicationName: 'remoTree',
     applicationVersion: 'Version ${packageInfo.version}',
-    applicationLegalese: '©2023 by Douglas W. Bell',
+    applicationLegalese: '©2024 by Douglas W. Bell',
     applicationIcon: Image.asset('assets/images/tree_icon_48.png'),
   );
 }

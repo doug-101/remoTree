@@ -1,6 +1,6 @@
 // file_interface.dart, models for remote and local file connections.
 // remoTree, an sftp-based remote file manager.
-// Copyright (c) 2023, Douglas W. Bell.
+// Copyright (c) 2024, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
 import 'dart:io';
@@ -10,12 +10,14 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'file_item.dart';
 import 'host_data.dart';
+import 'sort_rule.dart';
 
 /// Base class common to remote and local classes.
 abstract class FileInterface extends ChangeNotifier {
   String? currentConnectName;
   String? rootPath;
   final rootItems = <FileItem>[];
+  late SortRule sortRule;
 
   Future<void> fetchRootFiles();
 
@@ -36,6 +38,18 @@ abstract class FileInterface extends ChangeNotifier {
     fetchRootFiles();
   }
 
+  /// Change sort rule and update stored children.
+  void changeSortRule(SortRule newRule) {
+    sortRule = newRule;
+    rootItems.sort(sortRule.comparator());
+    for (var root in rootItems) {
+      for (var item in allItemGenerator(root, withChilrenOnly: true)) {
+        item.children.sort(sortRule.comparator());
+      }
+    }
+    notifyListeners();
+  }
+
   /// Reset stored items to initial values.
   void closeConnection() {
     currentConnectName = null;
@@ -51,8 +65,9 @@ class RemoteInterface extends FileInterface {
   SftpClient? _sftpClient;
   String? rootPath;
   final rootItems = <FileItem>[];
+  SortRule sortRule;
 
-  RemoteInterface();
+  RemoteInterface() : sortRule = SortRule.fromPrefs();
 
   /// Make connection to given host and reload contents.
   Future<void> connectToClient({
@@ -76,9 +91,7 @@ class RemoteInterface extends FileInterface {
     rootItems.clear();
     final sftpItems = await _sftpClient!.listdir(rootPath!);
     rootItems.addAll(sftpItems.map((i) => FileItem.fromSftp(rootPath!, i)));
-    rootItems.sort(
-      (a, b) => a.filename.toLowerCase().compareTo(b.filename.toLowerCase()),
-    );
+    rootItems.sort(sortRule.comparator());
     notifyListeners();
   }
 
@@ -91,10 +104,7 @@ class RemoteInterface extends FileInterface {
         final path = '${item.path}/${item.filename}';
         final sftpItems = await _sftpClient!.listdir(path);
         item.children.addAll(sftpItems.map((i) => FileItem.fromSftp(path, i)));
-        item.children.sort(
-          (a, b) =>
-              a.filename.toLowerCase().compareTo(b.filename.toLowerCase()),
-        );
+        item.children.sort(sortRule.comparator());
       }
       notifyListeners();
     }
@@ -116,9 +126,10 @@ class LocalInterface extends FileInterface {
   String? currentConnectName = 'Local';
   String? rootPath;
   final rootItems = <FileItem>[];
+  SortRule sortRule;
 
   /// Load local file info at startup.
-  LocalInterface() {
+  LocalInterface() : sortRule = SortRule.fromPrefs() {
     fetchRootFiles();
   }
 
@@ -140,9 +151,7 @@ class LocalInterface extends FileInterface {
     rootItems.clear();
     final items = Directory(rootPath!).listSync();
     rootItems.addAll(items.map((i) => FileItem.fromFileEntity(i)));
-    rootItems.sort(
-      (a, b) => a.filename.toLowerCase().compareTo(b.filename.toLowerCase()),
-    );
+    rootItems.sort(sortRule.comparator());
     notifyListeners();
   }
 
@@ -154,10 +163,7 @@ class LocalInterface extends FileInterface {
         final path = '${item.path}/${item.filename}';
         final items = Directory(path).listSync();
         item.children.addAll(items.map((i) => FileItem.fromFileEntity(i)));
-        item.children.sort(
-          (a, b) =>
-              a.filename.toLowerCase().compareTo(b.filename.toLowerCase()),
-        );
+        item.children.sort(sortRule.comparator());
       }
       notifyListeners();
     }

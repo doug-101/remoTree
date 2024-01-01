@@ -1,6 +1,6 @@
 // tree_view.dart, the main view showing a file tree.
 // remoTree, an sftp-based remote file manager.
-// Copyright (c) 2023, Douglas W. Bell.
+// Copyright (c) 2024, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
 import 'package:flutter/material.dart';
@@ -32,6 +32,20 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
           appBar: AppBar(
             title: Text('remoTree - ${model.currentConnectName}'),
             actions: <Widget>[
+              IconButton(
+                // Sort rule command.
+                icon: const Icon(Icons.sort),
+                tooltip: 'Change Sort Rule',
+                onPressed: () async {
+                  final newSortRule = await commonDialogs.sortRuleDialog(
+                    context: context,
+                    initialRule: model.sortRule,
+                  );
+                  if (newSortRule != null) {
+                    model.changeSortRule(newSortRule);
+                  }
+                },
+              ),
               if (model is RemoteInterface)
                 IconButton(
                   // Close connection command.
@@ -109,7 +123,7 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
   List<Widget> _treeWidgets(FileInterface model) {
     final treeWidgets = <Widget>[];
     for (var root in model.rootItems) {
-      for (var item in itemGenerator(
+      for (var item in openItemGenerator(
         root,
         showDotFiles: prefs.getBool('show_dot_files') ?? false,
       )) {
@@ -117,7 +131,8 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
         final dateString = DateTime.now().difference(item.modTime).inDays < 183
             ? DateFormat('MMM dd HH:mm').format(item.modTime)
             : DateFormat('MMM dd  yyyy').format(item.modTime);
-        final sizeString = item.fileSize != null ? ', ${item.fileSize!}' : '';
+        final sizeString =
+            item.fileSize != null ? ', ${item.fileSizeString}' : '';
         treeWidgets.add(
           Padding(
             padding:
