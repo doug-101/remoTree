@@ -1,6 +1,6 @@
 // host_select.dart, a view showing available servers.
 // remoTree, an sftp-based remote file manager.
-// Copyright (c) 2023, Douglas W. Bell.
+// Copyright (c) 2024, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
 import 'package:flutter/material.dart';
@@ -21,6 +21,14 @@ class HostSelect extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('remoTree - Remote'),
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          tooltip: 'Open Drawer Menu',
+          onPressed: () {
+            // Open drawer from parent frame scaffold.
+            Scaffold.of(context).openDrawer();
+          },
+        ),
         actions: <Widget>[
           IconButton(
             // New host command.

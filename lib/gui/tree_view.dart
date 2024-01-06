@@ -23,6 +23,8 @@ class TreeView<T extends FileInterface> extends StatefulWidget {
 
 class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
   final selectedItems = <FileItem>[];
+  static final copyItems = <FileItem>[];
+  static FileInterface? copyFromModel;
 
   @override
   Widget build(BuildContext context) {
@@ -30,32 +32,130 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
       builder: (context, model, child) {
         return Scaffold(
           appBar: AppBar(
-            title: Text('remoTree - ${model.currentConnectName}'),
+            title: Text(
+              selectedItems.isEmpty
+                  ? copyItems.isEmpty
+                      ? 'remoTree - ${model.currentConnectName}'
+                      : 'remoTree - ${copyItems.length} to copy'
+                  : copyItems.isEmpty
+                      ? 'remoTree - ${selectedItems.length} selected'
+                      : 'remoTree - ${selectedItems.length} selected / '
+                          '${copyItems.length} copied',
+            ),
+            leading: selectedItems.isEmpty && copyItems.isEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.menu),
+                    tooltip: 'Open Drawer Menu',
+                    onPressed: () {
+                      // Open drawer from parent frame scaffold.
+                      Scaffold.of(context).openDrawer();
+                    },
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    tooltip: 'Clear Selection & Copy Buffer',
+                    onPressed: () {
+                      setState(() {
+                        selectedItems.clear();
+                        copyItems.clear();
+                        copyFromModel = null;
+                      });
+                    },
+                  ),
             actions: <Widget>[
-              IconButton(
-                // Sort rule command.
-                icon: const Icon(Icons.sort),
-                tooltip: 'Change Sort Rule',
-                onPressed: () async {
-                  final newSortRule = await commonDialogs.sortRuleDialog(
-                    context: context,
-                    initialRule: model.sortRule,
-                  );
-                  if (newSortRule != null) {
-                    model.changeSortRule(newSortRule);
-                  }
-                },
-              ),
-              if (model is RemoteInterface)
+              if (selectedItems.isNotEmpty && copyItems.isEmpty) ...[
+                if (selectedItems.length == 1 &&
+                    selectedItems.first.type == FileType.directory)
+                  IconButton(
+                    // New root command.
+                    icon: const Icon(Icons.anchor),
+                    tooltip: 'Set this a tree root',
+                    onPressed: () {
+                      final path = selectedItems.first.fullPath;
+                      selectedItems.clear();
+                      model.changeRootPath(path);
+                    },
+                  ),
+                if (selectedItems.length == 1 &&
+                    selectedItems.first.type == FileType.file)
+                  IconButton(
+                    // Edit command.
+                    icon: const Icon(Icons.edit_outlined),
+                    tooltip: 'Edit the Selected Item',
+                    onPressed: () {},
+                  ),
                 IconButton(
-                  // Close connection command.
-                  icon: const Icon(Icons.logout),
-                  tooltip: 'Close Connection',
+                  // Copy command.
+                  icon: const Icon(Icons.copy),
+                  tooltip: 'Mark Items for Copy',
                   onPressed: () {
-                    model.closeConnection();
-                    Navigator.pop(context);
+                    setState(() {
+                      copyItems.addAll(selectedItems);
+                      copyFromModel = model;
+                      selectedItems.clear();
+                    });
                   },
                 ),
+                IconButton(
+                  // Info command.
+                  icon: const Icon(Icons.info_outline),
+                  tooltip: 'Show Information for Items',
+                  onPressed: () {},
+                ),
+                IconButton(
+                  // Delete command.
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: 'Delete Selected Items',
+                  onPressed: () {},
+                ),
+              ],
+              if (selectedItems.length == 1 &&
+                  copyItems.isNotEmpty &&
+                  selectedItems.first.type == FileType.directory)
+                IconButton(
+                  // Paste command.
+                  icon: const Icon(Icons.paste),
+                  tooltip: 'Paste the Copied Items',
+                  onPressed: () {
+                    final copyItemsTmp = List.of(copyItems);
+                    final destination = selectedItems.first;
+                    selectedItems.clear();
+                    copyItems.clear();
+                    model.copyFiles(copyFromModel!, copyItemsTmp, destination);
+                  },
+                ),
+              if (selectedItems.isEmpty && copyItems.isEmpty) ...[
+                IconButton(
+                  // Sort rule command.
+                  icon: const Icon(Icons.sort),
+                  tooltip: 'Change Sort Rule',
+                  onPressed: () async {
+                    final newSortRule = await commonDialogs.sortRuleDialog(
+                      context: context,
+                      initialRule: model.sortRule,
+                    );
+                    if (newSortRule != null) {
+                      model.changeSortRule(newSortRule);
+                    }
+                  },
+                ),
+                IconButton(
+                  // Terminal command.
+                  icon: const Icon(Icons.terminal),
+                  tooltip: 'Open a terminal window',
+                  onPressed: () {},
+                ),
+                if (model is RemoteInterface)
+                  IconButton(
+                    // Close connection command.
+                    icon: const Icon(Icons.logout),
+                    tooltip: 'Close Connection',
+                    onPressed: () {
+                      model.closeConnection();
+                      Navigator.pop(context);
+                    },
+                  ),
+              ],
             ],
           ),
           body: Padding(
