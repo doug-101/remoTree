@@ -6,6 +6,7 @@
 import 'dart:io';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:path/path.dart' as p;
+import 'file_interface.dart';
 
 enum FileType { directory, file, link, other }
 
@@ -14,7 +15,6 @@ class FileItem {
   final String path;
   final String filename;
   final FileType type;
-  final bool isRemote;
   late final DateTime modTime;
   // [fileSize] is null for a directory or link.
   int? fileSize;
@@ -22,7 +22,7 @@ class FileItem {
   bool isOpen = false;
   int level = 0;
 
-  FileItem(this.path, this.filename, this.type, this.isRemote, this.modTime);
+  FileItem(this.path, this.filename, this.type, this.modTime);
 
   /// Constructor for local files.
   FileItem.fromFileEntity(FileSystemEntity file)
@@ -33,8 +33,7 @@ class FileItem {
           (File f) => FileType.file,
           (Link l) => FileType.link,
           _ => FileType.other,
-        },
-        isRemote = false {
+        } {
     final stat = file.statSync();
     modTime = stat.modified;
     if (type == FileType.file) {
@@ -50,8 +49,7 @@ class FileItem {
           SftpFileType.regularFile => FileType.file,
           SftpFileType.symbolicLink => FileType.link,
           _ => FileType.other,
-        },
-        isRemote = true {
+        } {
     modTime = DateTime.fromMillisecondsSinceEpoch(
       (fileInfo.attr.modifyTime ?? 0) * 1000,
     );
@@ -84,17 +82,15 @@ class FileItem {
 
 /// Return items from the tree if open and assign indent levels.
 Iterable<FileItem> openItemGenerator(FileItem item,
-    {bool showDotFiles = false, int level = 0}) sync* {
+    {bool hideDotFiles = true, int level = 0}) sync* {
   item.level = level;
-  if (item.filename != '.' &&
-      item.filename != '..' &&
-      (showDotFiles || !item.filename.startsWith('.'))) {
+  if (!hideDotFiles || !item.filename.startsWith('.')) {
     yield item;
     if (item.isOpen) {
       for (var child in item.children) {
         yield* openItemGenerator(
           child,
-          showDotFiles: showDotFiles,
+          hideDotFiles: hideDotFiles,
           level: level + 1,
         );
       }
@@ -104,13 +100,11 @@ Iterable<FileItem> openItemGenerator(FileItem item,
 
 /// Return all existing items from the tree.
 Iterable<FileItem> allItemGenerator(FileItem item,
-    {bool withChilrenOnly = false}) sync* {
-  if (item.filename != '.' &&
-      item.filename != '..' &&
-      (!withChilrenOnly || item.children.isNotEmpty)) {
+    {bool withChildrenOnly = false}) sync* {
+  if (!withChildrenOnly || item.children.isNotEmpty) {
     yield item;
     for (var child in item.children) {
-      yield* allItemGenerator(child, withChilrenOnly: withChilrenOnly);
+      yield* allItemGenerator(child, withChildrenOnly: withChildrenOnly);
     }
   }
 }

@@ -10,6 +10,8 @@ import 'tree_view.dart';
 import '../model/file_interface.dart';
 import '../model/file_item.dart';
 
+enum ViewType { localFiles, remoteFiles, terminal }
+
 /// The framework view that shows a bottom nav bar.
 class FrameView extends StatefulWidget {
   FrameView({super.key});
@@ -19,7 +21,7 @@ class FrameView extends StatefulWidget {
 }
 
 class _FrameViewState extends State<FrameView> {
-  var remoteShown = true;
+  var _tabShown = ViewType.remoteFiles;
 
   @override
   Widget build(BuildContext context) {
@@ -51,27 +53,32 @@ class _FrameViewState extends State<FrameView> {
         ),
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: remoteShown ? 0 : 1,
+        selectedIndex: _tabShown.index,
         onDestinationSelected: (int index) {
           setState(() {
-            remoteShown = index == 0;
+            _tabShown = ViewType.values[index];
           });
         },
         destinations: const <NavigationDestination>[
           NavigationDestination(
-            icon: Icon(Icons.network_wifi_3_bar),
+            icon: const Icon(Icons.location_on),
+            label: 'Local Files',
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.network_wifi_3_bar),
             label: 'Remote Files',
           ),
           NavigationDestination(
-            icon: Icon(Icons.location_on),
-            label: 'Local Files',
+            icon: const Icon(Icons.terminal),
+            label: 'Remote Terminal',
           ),
         ],
       ),
       body: IndexedStack(
-        index: remoteShown ? 0 : 1,
+        index: _tabShown.index,
         sizing: StackFit.passthrough,
         children: <Widget>[
+          TreeView<LocalInterface>(),
           // A nested navigator to manage views for the remote tab view.
           Navigator(
             onGenerateRoute: (RouteSettings settings) {
@@ -90,7 +97,24 @@ class _FrameViewState extends State<FrameView> {
               );
             },
           ),
-          TreeView<LocalInterface>(),
+          // A nested navigator to manage views for the terminal view.
+          Navigator(
+            onGenerateRoute: (RouteSettings settings) {
+              return MaterialPageRoute(
+                settings: settings,
+                builder: (BuildContext context) {
+                  switch (settings.name) {
+                    case '/':
+                      return HostSelect();
+                    case '/rem_tree':
+                      return TreeView<RemoteInterface>();
+                    default:
+                      return HostSelect();
+                  }
+                },
+              );
+            },
+          ),
         ],
       ),
     );

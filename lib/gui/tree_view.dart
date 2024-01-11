@@ -23,6 +23,7 @@ class TreeView<T extends FileInterface> extends StatefulWidget {
 
 class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
   final selectedItems = <FileItem>[];
+  var hideDotFiles = true;
   static final copyItems = <FileItem>[];
   static FileInterface? copyFromModel;
 
@@ -40,7 +41,7 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                   : copyItems.isEmpty
                       ? 'remoTree - ${selectedItems.length} selected'
                       : 'remoTree - ${selectedItems.length} selected / '
-                          '${copyItems.length} copied',
+                          '${copyItems.length} to copy',
             ),
             leading: selectedItems.isEmpty && copyItems.isEmpty
                 ? IconButton(
@@ -106,7 +107,11 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                   // Delete command.
                   icon: const Icon(Icons.delete_outline),
                   tooltip: 'Delete Selected Items',
-                  onPressed: () {},
+                  onPressed: () {
+                    final selItems = List.of(selectedItems);
+                    selectedItems.clear();
+                    model.deleteItems(selItems);
+                  },
                 ),
               ],
               if (selectedItems.length == 1 &&
@@ -121,10 +126,31 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                     final destination = selectedItems.first;
                     selectedItems.clear();
                     copyItems.clear();
-                    model.copyFiles(copyFromModel!, copyItemsTmp, destination);
+                    model.copyFileOperation(
+                        copyFromModel!, copyItemsTmp, destination);
                   },
                 ),
               if (selectedItems.isEmpty && copyItems.isEmpty) ...[
+                IconButton(
+                  // Refresh command.
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Refresh Files',
+                  onPressed: () {
+                    model.refreshFiles();
+                  },
+                ),
+                IconButton(
+                  // Show hidden files.
+                  icon: Icon(hideDotFiles
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined),
+                  tooltip: 'Toggle Show Hidden Files',
+                  onPressed: () {
+                    setState(() {
+                      hideDotFiles = !hideDotFiles;
+                    });
+                  },
+                ),
                 IconButton(
                   // Sort rule command.
                   icon: const Icon(Icons.sort),
@@ -138,12 +164,6 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                       model.changeSortRule(newSortRule);
                     }
                   },
-                ),
-                IconButton(
-                  // Terminal command.
-                  icon: const Icon(Icons.terminal),
-                  tooltip: 'Open a terminal window',
-                  onPressed: () {},
                 ),
                 if (model is RemoteInterface)
                   IconButton(
@@ -225,7 +245,7 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
     for (var root in model.rootItems) {
       for (var item in openItemGenerator(
         root,
-        showDotFiles: prefs.getBool('show_dot_files') ?? false,
+        hideDotFiles: hideDotFiles,
       )) {
         final isItemSelected = selectedItems.contains(item);
         final dateString = DateTime.now().difference(item.modTime).inDays < 183

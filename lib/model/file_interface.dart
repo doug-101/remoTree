@@ -19,14 +19,17 @@ abstract class FileInterface extends ChangeNotifier {
   final rootItems = <FileItem>[];
   late SortRule sortRule;
 
-  Future<void> fetchRootFiles();
+  Future<void> _fetchRootFiles();
 
-  Future<void> updateChildren(FileItem item);
+  Future<void> _updateChildren(FileItem item);
 
-  Future<Stream<Uint8List>> readFile(FileItem item);
+  Future<Uint8List> _readFile(FileItem item);
 
-  Future<void> writeFile(
-      FileItem parent, String filename, Stream<Uint8List> data);
+  Future<void> _writeFile(FileItem parent, String filename, Uint8List data);
+
+  Future<void> _createDirectory(String fullPath);
+
+  Future<void> _deleteFiles(List<FileItem> selFiles);
 
   /// Return path elements for use in breadcrumb navigation.
   List<String> splitRootPath() {
@@ -38,9 +41,10 @@ abstract class FileInterface extends ChangeNotifier {
   }
 
   /// Change to the new root path and reload contents.
-  void changeRootPath(String newPath) {
+  Future<void> changeRootPath(String newPath) async {
     rootPath = newPath;
-    fetchRootFiles();
+    await _fetchRootFiles();
+    notifyListeners();
   }
 
   /// Toggle given directory open and load children if needed.
@@ -48,10 +52,37 @@ abstract class FileInterface extends ChangeNotifier {
     if (item.type == FileType.directory || item.type == FileType.link) {
       item.isOpen = !item.isOpen;
       if (item.isOpen && item.children.isEmpty) {
-        await updateChildren(item);
+        await _updateChildren(item);
       }
       notifyListeners();
     }
+  }
+
+  /// Refresh file list to get file system changes.
+  Future<void> refreshFiles() async {
+    final openPaths = <String>{};
+    for (var root in rootItems) {
+      for (var item in openItemGenerator(root, hideDotFiles: false)) {
+        if (item.isOpen) {
+          openPaths.add(item.fullPath);
+        }
+      }
+    }
+    await _fetchRootFiles();
+    for (var root in rootItems) {
+      if (openPaths.contains(root.fullPath)) {
+        root.isOpen = true;
+      }
+      for (var item in openItemGenerator(root, hideDotFiles: false)) {
+        if (item.type == FileType.directory) {
+          if (openPaths.contains(item.fullPath)) {
+            item.isOpen = true;
+            await _updateChildren(item);
+          }
+        }
+      }
+    }
+    notifyListeners();
   }
 
   /// Change sort rule and update stored children.
@@ -59,22 +90,66 @@ abstract class FileInterface extends ChangeNotifier {
     sortRule = newRule;
     rootItems.sort(sortRule.comparator());
     for (var root in rootItems) {
-      for (var item in allItemGenerator(root, withChilrenOnly: true)) {
+      for (var item in allItemGenerator(root, withChildrenOnly: true)) {
         item.children.sort(sortRule.comparator());
       }
     }
     notifyListeners();
   }
 
-  /// Copy files from the given source into the destination.
-  Future<void> copyFiles(FileInterface sourceModel, List<FileItem> sourceFiles,
-      FileItem destinationDir) async {
-    for (var file in sourceFiles) {
-      await writeFile(
-          destinationDir, file.filename, await sourceModel.readFile(file));
-    }
-    await updateChildren(destinationDir);
+  /// Return selection list with nested items removed.
+  List<FileItem> _unnestedSelectList(List<FileItem> selList) {
+    final dirPaths = selList
+        .where((i) => i.type == FileType.directory)
+        .map((i) => i.fullPath);
+    final unnestedItems =
+        selList.where((i) => !dirPaths.any((d) => i.path.startsWith(d)));
+    return List.of(unnestedItems);
+  }
+
+  /// Copy files from the given source into the destination & make updates.
+  Future<void> copyFileOperation(
+    FileInterface sourceModel,
+    List<FileItem> sourceFiles,
+    FileItem destinationDir,
+  ) async {
+    await _copyFiles(
+        sourceModel, _unnestedSelectList(sourceFiles), destinationDir);
     destinationDir.isOpen = true;
+    notifyListeners();
+  }
+
+  /// Copy files and recursive directories from the source to the destination.
+  Future<void> _copyFiles(
+    FileInterface sourceModel,
+    List<FileItem> sourceFiles,
+    FileItem destinationDir,
+  ) async {
+    for (var file in sourceFiles) {
+      if (file.type == FileType.directory) {
+        await sourceModel._updateChildren(file);
+        final newDir = FileItem(
+          destinationDir.fullPath,
+          file.filename,
+          FileType.directory,
+          DateTime.now(),
+        );
+        await _createDirectory(newDir.fullPath);
+        await _copyFiles(sourceModel, file.children, newDir);
+      } else {
+        await _writeFile(
+          destinationDir,
+          file.filename,
+          await sourceModel._readFile(file),
+        );
+      }
+    }
+    await _updateChildren(destinationDir);
+  }
+
+  Future<void> deleteItems(List<FileItem> selFiles) async {
+    await _deleteFiles(_unnestedSelectList(selFiles));
+    await refreshFiles();
     notifyListeners();
   }
 
@@ -110,47 +185,80 @@ class RemoteInterface extends FileInterface {
     _sftpClient = await sshClient!.sftp();
     rootPath = await _sftpClient!.absolute('.');
     currentConnectName = hostData.displayName;
-    fetchRootFiles();
+    await _fetchRootFiles();
+    notifyListeners();
   }
 
   /// Retrieve file info at the root level.
   @override
-  Future<void> fetchRootFiles() async {
+  Future<void> _fetchRootFiles() async {
     rootItems.clear();
     final sftpItems = await _sftpClient!.listdir(rootPath!);
+    sftpItems.removeWhere((i) => i.filename == '.' || i.filename == '..');
     rootItems.addAll(sftpItems.map((i) => FileItem.fromSftp(rootPath!, i)));
     rootItems.sort(sortRule.comparator());
-    notifyListeners();
   }
 
   /// Update children of given directory.
   @override
-  Future<void> updateChildren(FileItem item) async {
+  Future<void> _updateChildren(FileItem item) async {
     item.children.clear();
     final sftpItems = await _sftpClient!.listdir(item.fullPath);
+    sftpItems.removeWhere((i) => i.filename == '.' || i.filename == '..');
     item.children
         .addAll(sftpItems.map((i) => FileItem.fromSftp(item.fullPath, i)));
     item.children.sort(sortRule.comparator());
   }
 
-  /// Read a single file into a stream for copying.
+  /// Read data from a single file for copying.
   @override
-  Future<Stream<Uint8List>> readFile(FileItem item) async {
+  Future<Uint8List> _readFile(FileItem item) async {
     final sftpFile =
         await _sftpClient!.open(item.fullPath, mode: SftpFileOpenMode.read);
-    return sftpFile.read();
+    final data = await sftpFile.readBytes();
+    sftpFile.close();
+    return data;
   }
 
-  /// Write a single file from a stream for copying.
+  /// Write a single file from data for copying.
   @override
-  Future<void> writeFile(
-      FileItem parent, String filename, Stream<Uint8List> data) async {
+  Future<void> _writeFile(
+      FileItem parent, String filename, Uint8List data) async {
     final sftpFile = await _sftpClient!.open(
       '${parent.fullPath}/$filename',
       mode: SftpFileOpenMode.create | SftpFileOpenMode.write,
     );
-    await sftpFile.write(data).done;
+    await sftpFile.writeBytes(data);
     sftpFile.close();
+  }
+
+  /// Create the given directory.
+  @override
+  Future<void> _createDirectory(String fullPath) async {
+    await _sftpClient!.mkdir(fullPath);
+  }
+
+  /// Delete the given items.
+  @override
+  Future<void> _deleteFiles(List<FileItem> selFiles) async {
+    final directories = <FileItem>[];
+    final files = <FileItem>[];
+    for (var selItem in selFiles) {
+      for (var item in allItemGenerator(selItem)) {
+        if (item.type == FileType.directory) {
+          await _updateChildren(item);
+          directories.add(item);
+        } else {
+          files.add(item);
+        }
+      }
+    }
+    for (var file in files) {
+      await _sftpClient!.remove(file.fullPath);
+    }
+    for (var dir in directories.reversed) {
+      await _sftpClient!.rmdir(dir.fullPath);
+    }
   }
 
   /// Reset stored items to initial values.
@@ -173,12 +281,17 @@ class LocalInterface extends FileInterface {
 
   /// Load local file info at startup.
   LocalInterface() : sortRule = SortRule.fromPrefs() {
-    fetchRootFiles();
+    _initialLoad();
+  }
+
+  Future<void> _initialLoad() async {
+    await _fetchRootFiles();
+    notifyListeners();
   }
 
   /// Retrieve file info at the root level.
   @override
-  Future<void> fetchRootFiles() async {
+  Future<void> _fetchRootFiles() async {
     if (rootPath == null) {
       if (Platform.isAndroid) {
         rootPath = (await getExternalStorageDirectory())?.path;
@@ -196,30 +309,45 @@ class LocalInterface extends FileInterface {
     final items = Directory(rootPath!).listSync();
     rootItems.addAll(items.map((i) => FileItem.fromFileEntity(i)));
     rootItems.sort(sortRule.comparator());
-    notifyListeners();
   }
 
   /// Update children of given directory.
   @override
-  Future<void> updateChildren(FileItem item) async {
+  Future<void> _updateChildren(FileItem item) async {
     item.children.clear();
     final items = Directory(item.fullPath).listSync();
     item.children.addAll(items.map((i) => FileItem.fromFileEntity(i)));
     item.children.sort(sortRule.comparator());
   }
 
-  /// Read a single file into a stream for copying.
+  /// Read data from a single file for copying.
   @override
-  Future<Stream<Uint8List>> readFile(FileItem item) async {
-    return File(item.fullPath).openRead().cast<Uint8List>();
+  Future<Uint8List> _readFile(FileItem item) async {
+    return File(item.fullPath).readAsBytes();
   }
 
-  /// Write a single file from a stream for copying.
+  /// Write a single file from data for copying.
   @override
-  Future<void> writeFile(
-      FileItem parent, String filename, Stream<Uint8List> data) async {
-    final sink = File('${parent.fullPath}/$filename').openWrite();
-    await sink.addStream(data);
-    sink.close();
+  Future<void> _writeFile(
+      FileItem parent, String filename, Uint8List data) async {
+    File('${parent.fullPath}/$filename').writeAsBytes(data);
+  }
+
+  /// Create the given directory.
+  @override
+  Future<void> _createDirectory(String fullPath) async {
+    await Directory(fullPath).create();
+  }
+
+  /// Delete the given items.
+  @override
+  Future<void> _deleteFiles(List<FileItem> selFiles) async {
+    for (var selItem in selFiles) {
+      if (selItem.type == FileType.directory) {
+        await Directory(selItem.fullPath).delete(recursive: true);
+      } else {
+        await File(selItem.fullPath).delete(recursive: true);
+      }
+    }
   }
 }
