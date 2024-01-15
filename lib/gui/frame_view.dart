@@ -78,7 +78,17 @@ class _FrameViewState extends State<FrameView> {
         index: _tabShown.index,
         sizing: StackFit.passthrough,
         children: <Widget>[
-          TreeView<LocalInterface>(),
+          // A nested navigator to manage views for the local tab view.
+          Navigator(
+            onGenerateRoute: (RouteSettings settings) {
+              return MaterialPageRoute(
+                settings: settings,
+                builder: (BuildContext context) {
+                  return TreeView<LocalInterface>();
+                },
+              );
+            },
+          ),
           // A nested navigator to manage views for the remote tab view.
           Navigator(
             onGenerateRoute: (RouteSettings settings) {

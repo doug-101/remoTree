@@ -1,4 +1,4 @@
-// host_select.dart, a view showing available servers.
+// host_select.dart, a view showing available remote servers.
 // remoTree, an sftp-based remote file manager.
 // Copyright (c) 2024, Douglas W. Bell.
 // Free software, GPL v2 or later.

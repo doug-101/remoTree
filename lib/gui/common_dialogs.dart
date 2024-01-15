@@ -6,7 +6,6 @@
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import '../main.dart' show prefs;
 import '../model/sort_rule.dart';
 
 final _filenameEditKey = GlobalKey<FormFieldState>();
@@ -194,10 +193,6 @@ Future<String?> filenameDialog({
             if (Platform.isWindows && (text.contains('\\'))) {
               return 'Cannot contain "\\" characters';
             }
-            if ((text.startsWith('.')) &&
-                (prefs.getBool('hidedotfiles') ?? true)) {
-              return 'Cannot start with a "."';
-            }
             if (text == initName) return 'A new name is required';
             return null;
           },
@@ -217,6 +212,91 @@ Future<String?> filenameDialog({
                 Navigator.pop(
                     context, _filenameEditKey.currentState!.value.trim());
               }
+            },
+          ),
+          TextButton(
+            child: const Text('CANCEL'),
+            onPressed: () => Navigator.pop(context, null),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+/// Dialog to select file mode permissions.
+Future<int?> modeSetDialog({
+  required BuildContext context,
+  required int initialMode,
+}) async {
+  return showDialog<int>(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      var mode = initialMode;
+      // The mask for each permission bit, in typical order.
+      final masks = const [0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1];
+      return AlertDialog(
+        title: Text('File Mode'),
+        content: StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            //
+            // Nested function for checkboxes with access to mode and setState.
+            DataCell checkboxGen(int pos) {
+              return DataCell(
+                Checkbox(
+                  // User read.
+                  value: (mode & masks[pos]) != 0,
+                  onChanged: (bool? value) {
+                    if (value != null) {
+                      setState(() {
+                        mode = mode ^ masks[pos];
+                      });
+                    }
+                  },
+                ),
+              );
+            }
+
+            return DataTable(
+              columns: <DataColumn>[
+                DataColumn(label: Text(''), numeric: true),
+                DataColumn(label: Text('  R  ')),
+                DataColumn(label: Text('  W  ')),
+                DataColumn(label: Text('  X  ')),
+              ],
+              rows: <DataRow>[
+                DataRow(
+                  cells: <DataCell>[
+                    DataCell(Text('user')),
+                    for (var i = 0; i < 3; i++) checkboxGen(i),
+                  ],
+                ),
+                DataRow(
+                  cells: <DataCell>[
+                    DataCell(Text('group')),
+                    for (var i = 3; i < 6; i++) checkboxGen(i),
+                  ],
+                ),
+                DataRow(
+                  cells: <DataCell>[
+                    DataCell(Text('other')),
+                    for (var i = 6; i < 9; i++) checkboxGen(i),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('OK'),
+            onPressed: () {
+              Navigator.pop(
+                context,
+                // Return the value if changed.
+                mode != initialMode ? mode : null,
+              );
             },
           ),
           TextButton(

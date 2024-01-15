@@ -31,6 +31,10 @@ abstract class FileInterface extends ChangeNotifier {
 
   Future<void> _deleteFiles(List<FileItem> selFiles);
 
+  Future<void> _renameFile(FileItem item, String newName);
+
+  Future<void> _changeFileMode(FileItem item, int newMode);
+
   /// Return path elements for use in breadcrumb navigation.
   List<String> splitRootPath() {
     if (rootPath == null) return <String>[];
@@ -147,9 +151,24 @@ abstract class FileInterface extends ChangeNotifier {
     await _updateChildren(destinationDir);
   }
 
+  /// Delete the given files and refresh the file data.
   Future<void> deleteItems(List<FileItem> selFiles) async {
     await _deleteFiles(_unnestedSelectList(selFiles));
     await refreshFiles();
+    notifyListeners();
+  }
+
+  /// Rename the given file and update the data.
+  Future<void> renameItem(FileItem item, String newName) async {
+    await _renameFile(item, newName);
+    item.filename = newName;
+    notifyListeners();
+  }
+
+  /// Change the premissions of the given file and update the data.
+  Future<void> changeItemMode(FileItem item, int newMode) async {
+    await _changeFileMode(item, newMode);
+    item.mode = newMode;
     notifyListeners();
   }
 
@@ -261,6 +280,19 @@ class RemoteInterface extends FileInterface {
     }
   }
 
+  /// Rename the given file.
+  Future<void> _renameFile(FileItem item, String newName) async {
+    await _sftpClient!.rename(item.fullPath, '${item.path}/$newName');
+  }
+
+  /// Change the premissions of the given file.
+  Future<void> _changeFileMode(FileItem item, int newMode) async {
+    await _sftpClient!.setStat(
+      item.fullPath,
+      SftpFileAttrs(mode: SftpFileMode.value(newMode)),
+    );
+  }
+
   /// Reset stored items to initial values.
   @override
   void closeConnection() {
@@ -349,5 +381,19 @@ class LocalInterface extends FileInterface {
         await File(selItem.fullPath).delete(recursive: true);
       }
     }
+  }
+
+  /// Rename the given file.
+  Future<void> _renameFile(FileItem item, String newName) async {
+    if (item.type == FileType.directory) {
+      await Directory(item.fullPath).rename('${item.path}/$newName');
+    } else {
+      await File(item.fullPath).rename('${item.path}/$newName');
+    }
+  }
+
+  /// Change the premissions of the given file.
+  Future<void> _changeFileMode(FileItem item, int newMode) async {
+    // No operation - can't change mode on local files in dart io.
   }
 }

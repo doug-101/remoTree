@@ -13,11 +13,14 @@ enum FileType { directory, file, link, other }
 /// Stores information needed for a remote or local file.
 class FileItem {
   final String path;
-  final String filename;
+  String filename;
   final FileType type;
   late final DateTime modTime;
   // [fileSize] is null for a directory or link.
   int? fileSize;
+  // [mode] and [accessTime] are null if not supported.
+  int? mode;
+  DateTime? accessTime;
   final children = <FileItem>[];
   bool isOpen = false;
   int level = 0;
@@ -39,6 +42,8 @@ class FileItem {
     if (type == FileType.file) {
       fileSize = stat.size;
     }
+    mode = stat.mode;
+    accessTime = stat.accessed;
   }
 
   /// Constructor for remote files.
@@ -55,6 +60,12 @@ class FileItem {
     );
     if (type == FileType.file) {
       fileSize = fileInfo.attr.size ?? 0;
+    }
+    mode = fileInfo.attr?.mode?.value;
+    if (fileInfo.attr.accessTime != null) {
+      accessTime = DateTime.fromMillisecondsSinceEpoch(
+        (fileInfo.attr.accessTime!) * 1000,
+      );
     }
   }
 
@@ -77,6 +88,33 @@ class FileItem {
       default:
         return '${((fileSize ?? 0) / 1e12).toStringAsFixed(1)}T';
     }
+  }
+
+  /// Return the file mode as a human readable string.
+  ///
+  /// Returns an empty string if [mode] is null.
+  String get fileModeString {
+    if (mode == null) return '';
+    final permissions = mode! & 0xFFF;
+    final codes = const [
+      '---',
+      '--x',
+      '-w-',
+      '-wx',
+      'r--',
+      'r-x',
+      'rw-',
+      'rwx',
+    ];
+    final result = [];
+    if ((permissions & 0x800) != 0) result.add('(suid) ');
+    if ((permissions & 0x400) != 0) result.add('(sgid) ');
+    if ((permissions & 0x200) != 0) result.add('(sticky) ');
+    result
+      ..add(codes[(permissions >> 6) & 0x7])
+      ..add(' ${codes[(permissions >> 3) & 0x7]} ')
+      ..add(codes[permissions & 0x7]);
+    return result.join();
   }
 }
 

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'common_dialogs.dart' as commonDialogs;
+import 'info_view.dart';
 import '../main.dart' show prefs;
 import '../model/file_interface.dart';
 import '../model/file_item.dart';
@@ -101,7 +102,15 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                   // Info command.
                   icon: const Icon(Icons.info_outline),
                   tooltip: 'Show Information for Items',
-                  onPressed: () {},
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            InfoView<T>(fileItems: selectedItems),
+                      ),
+                    );
+                  },
                 ),
                 IconButton(
                   // Delete command.
