@@ -3,6 +3,7 @@
 // Copyright (c) 2024, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
+import 'dart:convert' show Utf8Codec;
 import 'dart:io';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/foundation.dart';
@@ -34,6 +35,10 @@ abstract class FileInterface extends ChangeNotifier {
   Future<void> _renameFile(FileItem item, String newName);
 
   Future<void> _changeFileMode(FileItem item, int newMode);
+
+  Future<String> readFileAsString(FileItem item);
+
+  Future<void> writeFileAsString(FileItem item, String data);
 
   /// Return path elements for use in breadcrumb navigation.
   List<String> splitRootPath() {
@@ -293,6 +298,25 @@ class RemoteInterface extends FileInterface {
     );
   }
 
+  /// Read a file using a UTF-8 codec.
+  Future<String> readFileAsString(FileItem item) async {
+    final sftpFile =
+        await _sftpClient!.open(item.fullPath, mode: SftpFileOpenMode.read);
+    final strData = await Utf8Codec().decodeStream(sftpFile.read());
+    sftpFile.close();
+    return strData;
+  }
+
+  /// Write a file using a UFT-8 codec.
+  Future<void> writeFileAsString(FileItem item, String data) async {
+    final sftpFile = await _sftpClient!.open(
+      item.fullPath,
+      mode: SftpFileOpenMode.create | SftpFileOpenMode.write,
+    );
+    await sftpFile.writeBytes(Utf8Codec().encode(data));
+    sftpFile.close();
+  }
+
   /// Reset stored items to initial values.
   @override
   void closeConnection() {
@@ -395,5 +419,15 @@ class LocalInterface extends FileInterface {
   /// Change the premissions of the given file.
   Future<void> _changeFileMode(FileItem item, int newMode) async {
     // No operation - can't change mode on local files in dart io.
+  }
+
+  /// Read a file using a UTF-8 codec.
+  Future<String> readFileAsString(FileItem item) async {
+    return File(item.fullPath).readAsString();
+  }
+
+  /// Write a file using a UFT-8 codec.
+  Future<void> writeFileAsString(FileItem item, String data) async {
+    await File(item.fullPath).writeAsString(data);
   }
 }
