@@ -5,7 +5,6 @@
 
 import 'package:flutter/material.dart';
 import 'common_dialogs.dart' as commonDialogs;
-import '../main.dart' show prefs;
 import '../model/file_interface.dart';
 import '../model/file_item.dart';
 
@@ -113,6 +112,7 @@ class _EditViewState extends State<EditView> {
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
                         minWidth: viewportConstraints.maxWidth,
+                        minHeight: viewportConstraints.maxHeight,
                       ),
                       child: IntrinsicWidth(
                         child: TextField(

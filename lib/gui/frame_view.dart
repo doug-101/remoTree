@@ -4,8 +4,10 @@
 // Free software, GPL v2 or later.
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'common_dialogs.dart' as commonDialogs;
 import 'host_select.dart';
+import 'shell_view.dart';
 import 'tree_view.dart';
 import '../model/file_interface.dart';
 import '../model/file_item.dart';
@@ -95,10 +97,16 @@ class _FrameViewState extends State<FrameView> {
               return MaterialPageRoute(
                 settings: settings,
                 builder: (BuildContext context) {
+                  final model =
+                      Provider.of<RemoteInterface>(context, listen: false);
                   switch (settings.name) {
                     case '/':
-                      return HostSelect();
-                    case '/rem_tree':
+                      if (model.isConnected) {
+                        return TreeView<RemoteInterface>();
+                      } else {
+                        return HostSelect();
+                      }
+                    case '/remote':
                       return TreeView<RemoteInterface>();
                     default:
                       return HostSelect();
@@ -110,14 +118,20 @@ class _FrameViewState extends State<FrameView> {
           // A nested navigator to manage views for the terminal view.
           Navigator(
             onGenerateRoute: (RouteSettings settings) {
+              final model =
+                  Provider.of<RemoteInterface>(context, listen: false);
               return MaterialPageRoute(
                 settings: settings,
                 builder: (BuildContext context) {
                   switch (settings.name) {
                     case '/':
-                      return HostSelect();
-                    case '/rem_tree':
-                      return TreeView<RemoteInterface>();
+                      if (model.isConnected) {
+                        return ShellView();
+                      } else {
+                        return HostSelect();
+                      }
+                    case '/remote':
+                      return ShellView();
                     default:
                       return HostSelect();
                   }

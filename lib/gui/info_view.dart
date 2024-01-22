@@ -59,6 +59,7 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                       child: Text(
                                         item.filename,
                                         style: TextStyle(
+                                          fontFamily: 'RobotoMono',
                                           color: Theme.of(context).primaryColor,
                                         ),
                                       ),
@@ -83,6 +84,9 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                         Text(
                                           DateFormat('MMM dd yyyy, HH:mm')
                                               .format(item.modTime),
+                                          style: TextStyle(
+                                            fontFamily: 'RobotoMono',
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -95,6 +99,9 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                           Text(
                                             DateFormat('MMM dd yyyy, HH:mm')
                                                 .format(item.accessTime!),
+                                            style: TextStyle(
+                                              fontFamily: 'RobotoMono',
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -103,38 +110,51 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                     DataRow(
                                       cells: <DataCell>[
                                         DataCell(Text('Size:')),
-                                        DataCell(Text(item.fileSizeString)),
+                                        DataCell(Text(
+                                          item.fileSizeString,
+                                          style: TextStyle(
+                                            fontFamily: 'RobotoMono',
+                                          ),
+                                        )),
                                       ],
                                     ),
                                   if (item.mode != null)
                                     DataRow(
                                       cells: <DataCell>[
                                         DataCell(Text('File Mode:')),
-                                        DataCell(model is RemoteInterface
-                                            ? InkWell(
-                                                child: Text(
+                                        DataCell(
+                                          model is RemoteInterface
+                                              ? InkWell(
+                                                  child: Text(
+                                                    item.fileModeString,
+                                                    style: TextStyle(
+                                                      color: Theme.of(context)
+                                                          .primaryColor,
+                                                      fontFamily: 'RobotoMono',
+                                                    ),
+                                                  ),
+                                                  onTap: () async {
+                                                    final newMode =
+                                                        await commonDialogs
+                                                            .modeSetDialog(
+                                                      context: context,
+                                                      initialMode: item.mode!,
+                                                    );
+                                                    if (newMode != null) {
+                                                      model.changeItemMode(
+                                                        item,
+                                                        newMode,
+                                                      );
+                                                    }
+                                                  },
+                                                )
+                                              : Text(
                                                   item.fileModeString,
                                                   style: TextStyle(
-                                                    color: Theme.of(context)
-                                                        .primaryColor,
+                                                    fontFamily: 'RobotoMono',
                                                   ),
                                                 ),
-                                                onTap: () async {
-                                                  final newMode =
-                                                      await commonDialogs
-                                                          .modeSetDialog(
-                                                    context: context,
-                                                    initialMode: item.mode!,
-                                                  );
-                                                  if (newMode != null) {
-                                                    model.changeItemMode(
-                                                      item,
-                                                      newMode,
-                                                    );
-                                                  }
-                                                },
-                                              )
-                                            : Text(item.fileModeString)),
+                                        ),
                                       ],
                                     ),
                                 ],

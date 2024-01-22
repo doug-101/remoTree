@@ -19,7 +19,7 @@ Future<void> main(List<String> cmdLineArgs) async {
   LicenseRegistry.addLicense(
     () => Stream<LicenseEntry>.value(
       const LicenseEntryWithLineBreaks(
-        <String>['TreeTag'],
+        <String>['remoTree'],
         'RemoTree, Copyright (C) 2023 by Douglas W. Bell\n\n'
         'This program is free software; you can redistribute it and/or modify '
         'it under the terms of the GNU General Public License as published by '

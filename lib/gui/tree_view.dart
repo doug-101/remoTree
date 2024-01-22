@@ -33,6 +33,21 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
   Widget build(BuildContext context) {
     return Consumer<T>(
       builder: (context, model, child) {
+        if (model is RemoteInterface) {
+          if ((model as RemoteInterface).isConnected) {
+            // Connect if remote and not already done.
+            (model as RemoteInterface).connectToSftp();
+          } else {
+            // Close view if no connection (goes back to HostSelect).
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacementNamed(context, '/');
+              }
+            });
+          }
+        }
         return Scaffold(
           appBar: AppBar(
             title: Text(
@@ -192,7 +207,7 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                     tooltip: 'Close Connection',
                     onPressed: () {
                       model.closeConnection();
-                      Navigator.pop(context);
+                      // Will be popped when rebuilt.
                     },
                   ),
               ],
@@ -200,58 +215,53 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
           ),
           body: Padding(
             padding: const EdgeInsets.all(10),
-            child: PopScope(
-              onPopInvoked: (bool didPop) {
-                model.closeConnection();
-              },
-              // The breadcrumb navigation area.
-              child: Column(
-                children: <Widget>[
-                  SizedBox(
-                    height: 60,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: model.splitRootPath().isNotEmpty
-                          ? model.splitRootPath().length * 2 - 2
-                          : 0,
-                      itemBuilder: (BuildContext context, int index) {
-                        final pathList = model.splitRootPath();
-                        if (index.isEven) {
-                          return InputChip(
-                            label: Text(pathList[index ~/ 2]),
-                            onPressed: (() {
-                              var newPath = '';
-                              if (index > 0) {
-                                newPath = pathList
-                                    .getRange(1, index ~/ 2 + 1)
-                                    .join('/');
-                              }
-                              model.changeRootPath('/$newPath');
-                            }),
-                          );
-                        } else {
-                          // Plain text for separators and last current item.
-                          return Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              index == 1
-                                  ? ' :  / '
-                                  : index == pathList.length * 2 - 3
-                                      ? ' / ${pathList.last}'
-                                      : ' / ',
-                            ),
-                          );
-                        }
-                      },
-                    ),
+            // The breadcrumb navigation area.
+            child: Column(
+              children: <Widget>[
+                SizedBox(
+                  height: 60,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: model.splitRootPath().isNotEmpty
+                        ? model.splitRootPath().length * 2 - 2
+                        : 0,
+                    itemBuilder: (BuildContext context, int index) {
+                      final pathList = model.splitRootPath();
+                      if (index.isEven) {
+                        return InputChip(
+                          label: Text(pathList[index ~/ 2]),
+                          onPressed: (() {
+                            var newPath = '';
+                            if (index > 0) {
+                              newPath = pathList
+                                  .getRange(1, index ~/ 2 + 1)
+                                  .join('/');
+                            }
+                            model.changeRootPath('/$newPath');
+                          }),
+                        );
+                      } else {
+                        // Plain text for separators and last current item.
+                        return Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            index == 1
+                                ? ' :  / '
+                                : index == pathList.length * 2 - 3
+                                    ? ' / ${pathList.last}'
+                                    : ' / ',
+                          ),
+                        );
+                      }
+                    },
                   ),
-                  Expanded(
-                    child: ListView(
-                      children: _treeWidgets(model),
-                    ),
+                ),
+                Expanded(
+                  child: ListView(
+                    children: _treeWidgets(model),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
@@ -311,6 +321,7 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                         TextSpan(
                           text: item.filename,
                           style: TextStyle(
+                            fontFamily: 'RobotoMono',
                             color: isItemSelected
                                 ? Theme.of(context).colorScheme.secondary
                                 : null,
@@ -319,6 +330,7 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                             TextSpan(
                               text: '\n${dateString}${sizeString}',
                               style: TextStyle(
+                                fontFamily: 'RobotoMono',
                                 fontSize: 10,
                               ),
                             ),

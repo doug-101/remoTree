@@ -58,7 +58,12 @@ class HostSelect extends StatelessWidget {
                       Card(
                         child: ListTile(
                           title: Text(data.displayName),
-                          subtitle: Text(data.nameAndAddress),
+                          subtitle: Text(
+                            data.nameAndAddress,
+                            style: TextStyle(
+                              fontFamily: 'RobotoMono',
+                            ),
+                          ),
                           trailing: PopupMenuButton<MenuItems>(
                             icon: const Icon(Icons.more_vert),
                             onSelected: (MenuItems result) async {
@@ -112,7 +117,7 @@ class HostSelect extends StatelessWidget {
                             );
                             Navigator.pushNamed(
                               context,
-                              '/rem_tree',
+                              '/remote',
                             );
                           },
                         ),

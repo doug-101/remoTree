@@ -193,10 +193,14 @@ class RemoteInterface extends FileInterface {
   String? rootPath;
   final rootItems = <FileItem>[];
   SortRule sortRule;
+  SSHSession? _sshShell;
+  final outputLines = <String>[];
 
   RemoteInterface() : sortRule = SortRule.fromPrefs();
 
-  /// Make connection to given host and reload contents.
+  bool get isConnected => sshClient != null;
+
+  /// Make connection to given host.
   Future<void> connectToClient({
     required HostData hostData,
     required SSHPasswordRequestHandler passwordFunction,
@@ -206,11 +210,53 @@ class RemoteInterface extends FileInterface {
       username: hostData.userName,
       onPasswordRequest: passwordFunction,
     );
-    _sftpClient = await sshClient!.sftp();
-    rootPath = await _sftpClient!.absolute('.');
     currentConnectName = hostData.displayName;
-    await _fetchRootFiles();
-    notifyListeners();
+  }
+
+  /// Start the SSH client.
+  Future<void> connectToShell() async {
+    if (sshClient != null && _sshShell == null) {
+      _sshShell = await sshClient!.shell(pty: SSHPtyConfig(type: 'dumb'));
+      _sshShell!.stdout.listen((data) {
+        for (var line in Utf8Codec().decode(data).trimRight().split('\n')) {
+          // Remove carriage returns from inconsistent line ends.
+          line = line.replaceAll('\r', '');
+          // Skip lines starting with escapes and Unicode carriage returns.
+          if (!line.startsWith(String.fromCharCode(27)) &&
+              !line.startsWith(String.fromCharCode(9166))) {
+            outputLines.add(line);
+          }
+        }
+        notifyListeners();
+      });
+      _sshShell!.stderr.listen((data) {
+        for (var line in Utf8Codec().decode(data).trimRight().split('\n')) {
+          // Remove carriage returns from inconsistent line ends.
+          line = line.replaceAll('\r', '');
+          // Skip lines starting with escapes and Unicode carriage returns.
+          if (!line.startsWith(String.fromCharCode(27)) &&
+              !line.startsWith(String.fromCharCode(9166))) {
+            outputLines.add(line);
+          }
+        }
+        notifyListeners();
+      });
+    }
+  }
+
+  /// Send the given string as a SSH command.
+  void sendToShell(String cmd) {
+    _sshShell!.write(Utf8Codec().encode('$cmd\n'));
+  }
+
+  /// Start the SFTP client and reload contents.
+  Future<void> connectToSftp() async {
+    if (sshClient != null && _sftpClient == null) {
+      _sftpClient = await sshClient!.sftp();
+      rootPath = await _sftpClient!.absolute('.');
+      await _fetchRootFiles();
+      notifyListeners();
+    }
   }
 
   /// Retrieve file info at the root level.
@@ -323,8 +369,11 @@ class RemoteInterface extends FileInterface {
     super.closeConnection();
     _sftpClient?.close();
     sshClient?.close();
+    _sshShell?.close();
+    outputLines.clear();
     _sftpClient = null;
     sshClient = null;
+    _sshShell = null;
     notifyListeners();
   }
 }
