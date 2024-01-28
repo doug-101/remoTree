@@ -194,7 +194,7 @@ class RemoteInterface extends FileInterface {
   final rootItems = <FileItem>[];
   SortRule sortRule;
   SSHSession? _sshShell;
-  final outputLines = <String>[];
+  final outputLines = <String>[''];
 
   RemoteInterface() : sortRule = SortRule.fromPrefs();
 
@@ -218,18 +218,99 @@ class RemoteInterface extends FileInterface {
     if (sshClient != null && _sshShell == null) {
       _sshShell = await sshClient!.shell(pty: SSHPtyConfig(type: 'dumb'));
       _sshShell!.stdout.listen((data) {
-        for (var line in Utf8Codec().decode(data).trimRight().split('\n')) {
-          // Remove carriage returns from inconsistent line ends.
-          line = line.replaceAll('\r', '');
-          // Skip lines starting with escapes and Unicode carriage returns.
-          if (!line.startsWith(String.fromCharCode(27)) &&
-              !line.startsWith(String.fromCharCode(9166))) {
-            outputLines.add(line);
+        final _debugMode = false;
+        if (!_debugMode) {
+          var atCR = false;
+          var inEsc = false;
+          final line = <int>[];
+          for (var i in data) {
+            if (atCR && (i != 10 && i != 13)) {
+              // Carriage return not followed by a line feed resets the line.
+              line.clear();
+              outputLines.last = '';
+              atCR = false;
+            }
+            switch (i) {
+              case 13:
+                // Carriage return.
+                atCR = true;
+              case 10:
+                // Line feed must only follow a CR.
+                assert(atCR);
+                if (inEsc) {
+                  // Remove typical length of escaped characters.
+                  line.removeRange(0, line.length > 7 ? 7 : line.length);
+                  inEsc = false;
+                }
+                if (line.isNotEmpty) {
+                  outputLines.last = Utf8Codec().decode(line);
+                }
+                outputLines.add('');
+                line.clear();
+                atCR = false;
+              case 9:
+                // Tab is replaced with two spaces.
+                line.addAll([32, 32]);
+              case 27:
+                // Escape.
+                inEsc = true;
+              case 142:
+              case 143:
+              case 226:
+                // Other control chars are skipped.
+                continue;
+              default:
+                line.add(i);
+            }
           }
+          if (inEsc) {
+            // Remove typical length of escaped characters.
+            line.removeRange(0, line.length > 7 ? 7 : line.length);
+          }
+          outputLines.last = Utf8Codec().decode(line);
+          // End non-debug mode.
+        } else {
+          // Start debug mode.
+          final printables = <int>[];
+          for (var i in data) {
+            if (i > 31 && i < 127) {
+              printables.add(i);
+            } else {
+              if (printables.isNotEmpty) {
+                if (printables.every((i) => i == 32)) {
+                  outputLines.add('<<<spaces>>>');
+                } else {
+                  outputLines.add(Utf8Codec().decode(printables));
+                }
+                printables.clear();
+              }
+              final ch = switch (i) {
+                10 => '<<LF>>',
+                13 => '<<CR>>',
+                27 => '<<ESC>>',
+                142 => '<<SS2>>',
+                143 => '<<SS3>>',
+                226 => '<<??>>',
+                _ => '<<<$i>>>'
+              };
+              outputLines.add(ch);
+            }
+          }
+          if (printables.isNotEmpty) {
+            if (printables.every((i) => i == 32)) {
+              outputLines.add('<<<spaces>>>');
+            } else {
+              outputLines.add(Utf8Codec().decode(printables));
+            }
+            printables.clear();
+          }
+          outputLines.add('<<<STOP>>>');
+          // End debug mode.
         }
         notifyListeners();
       });
       _sshShell!.stderr.listen((data) {
+        /*
         for (var line in Utf8Codec().decode(data).trimRight().split('\n')) {
           // Remove carriage returns from inconsistent line ends.
           line = line.replaceAll('\r', '');
@@ -240,13 +321,15 @@ class RemoteInterface extends FileInterface {
           }
         }
         notifyListeners();
+        */
+        print('Standard Error Content');
       });
     }
   }
 
   /// Send the given string as a SSH command.
   void sendToShell(String cmd) {
-    _sshShell!.write(Utf8Codec().encode('$cmd\n'));
+    _sshShell!.write(Utf8Codec().encode(cmd));
   }
 
   /// Start the SFTP client and reload contents.

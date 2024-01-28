@@ -6,6 +6,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'common_dialogs.dart' as commonDialogs;
 import '../model/file_interface.dart';
@@ -26,17 +27,14 @@ class _ShellViewState extends State<ShellView> {
   var maxCharPerLine = 100;
   final ScrollController _vertScrollController = ScrollController();
   final ScrollController _horizScrollController = ScrollController();
-  late TextEditingController _textController;
 
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _textController.dispose();
     super.dispose();
   }
 
@@ -80,91 +78,100 @@ class _ShellViewState extends State<ShellView> {
               ),
             ],
           ),
-          body: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: <Widget>[
-              Flexible(
+          body: Focus(
+            autofocus: true,
+            onKeyEvent: (node, event) {
+              if (event is KeyDownEvent) {
+                final _char = event.character;
+                if (_char != null) {
+                  model.sendToShell(_char);
+                } else {
+                  final escStr = String.fromCharCode(0x1b);
+                  switch (event.logicalKey) {
+                    case LogicalKeyboardKey.arrowUp:
+                      model.sendToShell('$escStr[A');
+                    case LogicalKeyboardKey.arrowDown:
+                      model.sendToShell('$escStr[B');
+                    case LogicalKeyboardKey.arrowRight:
+                      model.sendToShell('$escStr[C');
+                    case LogicalKeyboardKey.arrowLeft:
+                      model.sendToShell('$escStr[D');
+                    case LogicalKeyboardKey.home:
+                      model.sendToShell('$escStr[H');
+                    case LogicalKeyboardKey.end:
+                      model.sendToShell('$escStr[F');
+                  }
+                }
+              }
+              return KeyEventResult.handled;
+            },
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Scrollbar(
+                controller: _vertScrollController,
+                notificationPredicate: (notif) => notif.depth == 1,
+                thumbVisibility: true,
                 child: Scrollbar(
-                  controller: _vertScrollController,
-                  notificationPredicate: (notif) => notif.depth == 1,
+                  controller: _horizScrollController,
                   thumbVisibility: true,
-                  child: Scrollbar(
-                    controller: _horizScrollController,
-                    thumbVisibility: true,
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: LayoutBuilder(
-                        builder: (BuildContext context,
-                            BoxConstraints viewportConstraints) {
-                          if (widthPerChar == 0.0) {
-                            // Calculate width of a wide char for view width.
-                            final painter = TextPainter(
-                              text: TextSpan(
-                                text: 'WWWWWWWWWW',
-                                style: TextStyle(
-                                  fontFamily: 'RobotoMono',
-                                ),
-                              ),
-                              textDirection: TextDirection.ltr,
-                            );
-                            painter.layout();
-                            widthPerChar = painter.width / 10;
-                          }
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (_vertScrollController.hasClients) {
-                              _vertScrollController.jumpTo(0.0);
-                            }
-                          });
-                          return SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            controller: _horizScrollController,
-                            child: SizedBox(
-                              width: max(
-                                widthPerChar * maxCharPerLine + 10.0,
-                                viewportConstraints.maxWidth,
-                              ),
-                              child: ListView.builder(
-                                controller: _vertScrollController,
-                                itemCount: model.outputLines.length,
-                                itemExtent: 30.0,
-                                shrinkWrap: true,
-                                reverse: true,
-                                // Scrolling and filling in reverse is more
-                                // reliable for scroll to the bottom.
-                                itemBuilder: (BuildContext context, int index) {
-                                  return Text(
-                                    model.outputLines[
-                                        model.outputLines.length - index - 1],
-                                    style: TextStyle(
-                                      fontFamily: 'RobotoMono',
-                                    ),
-                                  );
-                                },
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: LayoutBuilder(
+                      builder: (BuildContext context,
+                          BoxConstraints viewportConstraints) {
+                        if (widthPerChar == 0.0) {
+                          // Calculate width of a wide char for view width.
+                          final painter = TextPainter(
+                            text: TextSpan(
+                              text: 'WWWWWWWWWW',
+                              style: TextStyle(
+                                fontFamily: 'RobotoMono',
                               ),
                             ),
+                            textDirection: TextDirection.ltr,
                           );
-                        },
-                      ),
+                          painter.layout();
+                          widthPerChar = painter.width / 10;
+                        }
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (_vertScrollController.hasClients) {
+                            _vertScrollController.jumpTo(0.0);
+                          }
+                        });
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          controller: _horizScrollController,
+                          child: SizedBox(
+                            width: max(
+                              widthPerChar * maxCharPerLine + 10.0,
+                              viewportConstraints.maxWidth,
+                            ),
+                            child: ListView.builder(
+                              controller: _vertScrollController,
+                              itemCount: model.outputLines.length,
+                              itemExtent: 30.0,
+                              shrinkWrap: true,
+                              reverse: true,
+                              // Scrolling and filling in reverse is more
+                              // reliable for scroll to the bottom.
+                              itemBuilder: (BuildContext context, int index) {
+                                return Text(
+                                  model.outputLines[
+                                      model.outputLines.length - index - 1],
+                                  style: TextStyle(
+                                    fontFamily: 'RobotoMono',
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                child: TextField(
-                  controller: _textController,
-                  autofocus: true,
-                  onEditingComplete: () async {
-                    model.sendToShell(_textController.text);
-                    _textController.text = '';
-                  },
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },
