@@ -8,9 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../model/sort_rule.dart';
 
-final _filenameEditKey = GlobalKey<FormFieldState>();
-final _textEditKey = GlobalKey<FormFieldState>();
-
 /// Dialog with two buttons (OK and CANCEL by default) for confirmation.
 Future<bool?> okCancelDialog({
   required BuildContext context,
@@ -172,6 +169,7 @@ Future<String?> filenameDialog({
   String title = 'New Filename',
   String? label,
 }) async {
+  final _filenameEditKey = GlobalKey<FormFieldState>();
   return showDialog<String>(
     context: context,
     barrierDismissible: false,
@@ -318,6 +316,7 @@ Future<String?> textDialog({
   bool allowEmpty = false,
   bool obscureText = false,
 }) async {
+  final _textEditKey = GlobalKey<FormFieldState>();
   return showDialog<String>(
     context: context,
     barrierDismissible: false,

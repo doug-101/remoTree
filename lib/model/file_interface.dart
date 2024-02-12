@@ -204,13 +204,44 @@ class RemoteInterface extends FileInterface {
   Future<void> connectToClient({
     required HostData hostData,
     required SSHPasswordRequestHandler passwordFunction,
+    SSHPasswordRequestHandler? keyPassphraseFunction,
   }) async {
+    String? passphrase;
+    if (hostData.key != null &&
+        keyPassphraseFunction != null &&
+        SSHKeyPair.isEncryptedPem(hostData.key!)) {
+      passphrase = await keyPassphraseFunction();
+    }
     sshClient = SSHClient(
       await SSHSocket.connect(hostData.address, 22),
       username: hostData.userName,
       onPasswordRequest: passwordFunction,
+      identities: hostData.key != null
+          ? SSHKeyPair.fromPem(hostData.key!, passphrase)
+          : null,
     );
     currentConnectName = hostData.displayName;
+  }
+
+  /// Create a key on the server.
+  Future<void> createServerKey(HostData hostData, String passphrase) async {
+    if (sshClient != null && _sftpClient == null) {
+      _sftpClient = await sshClient!.sftp();
+      String tmpDir = Utf8Codec()
+          .decode(await sshClient!.run('mktemp -d -p /tmp remotree-XXXXXX'))
+          .trim();
+      await sshClient!.run(
+        'ssh-keygen -t rsa -q -f "$tmpDir/id_rsa" -N "$passphrase"',
+      );
+      hostData.key = await readFileAsString(
+        FileItem(tmpDir, 'id_rsa', FileType.file, DateTime.now()),
+      );
+      await sshClient!.run(
+        'mkdir -p ~/.ssh && chmod 700 ~/.ssh && '
+        'cat $tmpDir/id_rsa.pub >> ~/.ssh/authorized_keys',
+      );
+      await sshClient!.run('rm -r $tmpDir');
+    }
   }
 
   /// Start the SSH client.
@@ -310,18 +341,6 @@ class RemoteInterface extends FileInterface {
         notifyListeners();
       });
       _sshShell!.stderr.listen((data) {
-        /*
-        for (var line in Utf8Codec().decode(data).trimRight().split('\n')) {
-          // Remove carriage returns from inconsistent line ends.
-          line = line.replaceAll('\r', '');
-          // Skip lines starting with escapes and Unicode carriage returns.
-          if (!line.startsWith(String.fromCharCode(27)) &&
-              !line.startsWith(String.fromCharCode(9166))) {
-            outputLines.add(line);
-          }
-        }
-        notifyListeners();
-        */
         print('Standard Error Content');
       });
     }

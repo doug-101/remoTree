@@ -114,6 +114,13 @@ class HostSelect extends StatelessWidget {
                                   obscureText: true,
                                 );
                               },
+                              keyPassphraseFunction: () async {
+                                return commonDialogs.textDialog(
+                                  context: context,
+                                  title: 'Enter key passphrase',
+                                  obscureText: true,
+                                );
+                              },
                             );
                             Navigator.pushNamed(
                               context,

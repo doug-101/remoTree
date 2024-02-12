@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'host_data.dart';
 import '../main.dart' show prefs;
 
-/// Strores host data for remote connections.
+/// Stores host data for remote connections.
 class HostList extends ChangeNotifier {
   final hostDataSet = <HostData>{};
 

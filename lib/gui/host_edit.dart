@@ -1,10 +1,12 @@
 // host_edit.dart, a view to edit connection data.
 // remoTree, an sftp-based remote file manager.
-// Copyright (c) 2023, Douglas W. Bell.
+// Copyright (c) 2024, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'common_dialogs.dart';
+import '../model/file_interface.dart';
 import '../model/host_list.dart';
 import '../model/host_data.dart';
 
@@ -21,7 +23,7 @@ class HostEdit extends StatefulWidget {
 class _HostEditState extends State<HostEdit> {
   final _formKey = GlobalKey<FormState>();
   bool _cancelFlag = false;
-  HostData? newHostData;
+  late final HostData newHostData;
 
   @override
   void initState() {
@@ -40,9 +42,9 @@ class _HostEditState extends State<HostEdit> {
       _formKey.currentState!.save();
       final model = Provider.of<HostList>(context, listen: false);
       if (widget.origHostData != null) {
-        model.replaceHostData(widget.origHostData!, newHostData!);
+        model.replaceHostData(widget.origHostData!, newHostData);
       } else {
-        model.addHostData(newHostData!);
+        model.addHostData(newHostData);
       }
       return true;
     }
@@ -53,9 +55,8 @@ class _HostEditState extends State<HostEdit> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.origHostData != null
-            ? 'Edit Host Data'
-            : 'New Host Data'),
+        title: Text(
+            widget.origHostData != null ? 'Edit Host Data' : 'New Host Data'),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.close),
@@ -89,7 +90,7 @@ class _HostEditState extends State<HostEdit> {
                     },
                     onSaved: (String? text) {
                       if (text != null) {
-                        newHostData!.displayName = text;
+                        newHostData.displayName = text;
                       }
                     },
                   ),
@@ -104,7 +105,7 @@ class _HostEditState extends State<HostEdit> {
                     },
                     onSaved: (String? text) {
                       if (text != null) {
-                        newHostData!.userName = text;
+                        newHostData.userName = text;
                       }
                     },
                   ),
@@ -120,9 +121,96 @@ class _HostEditState extends State<HostEdit> {
                     },
                     onSaved: (String? text) {
                       if (text != null) {
-                        newHostData!.address = text;
+                        newHostData.address = text;
                       }
                     },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: OutlinedButton(
+                      child: Text(
+                        newHostData.key != null
+                            ? 'Remove Private Key'
+                            : 'Add Private Key',
+                      ),
+                      onPressed: () async {
+                        if (newHostData.key != null) {
+                          // Remove the existing key.
+                          setState(() {
+                            newHostData.key = null;
+                          });
+                        } else {
+                          // Add a new key.
+                          final method = await choiceDialog(
+                            context: context,
+                            choices: [
+                              'Create on server',
+                              'Load from file',
+                            ],
+                            title: 'Add Key',
+                          );
+                          if (method != null) {
+                            if (method == 'Create on server') {
+                              if (_formKey.currentState!.validate()) {
+                                _formKey.currentState!.save();
+                              }
+                              final interfaceModel =
+                                  Provider.of<RemoteInterface>(
+                                context,
+                                listen: false,
+                              );
+                              await interfaceModel.connectToClient(
+                                hostData: newHostData,
+                                passwordFunction: () async {
+                                  return textDialog(
+                                    context: context,
+                                    title: 'Enter server password',
+                                    obscureText: true,
+                                  );
+                                },
+                              );
+                              String? passphrase;
+                              String? passphraseMatch;
+                              do {
+                                passphrase = await textDialog(
+                                  context: context,
+                                  title: 'Passphrase',
+                                  label: '(empty for none)',
+                                  allowEmpty: true,
+                                  obscureText: true,
+                                );
+                                if (passphrase == null) {
+                                  interfaceModel.closeConnection();
+                                  return;
+                                }
+                                if (passphrase.isEmpty) {
+                                  passphraseMatch = '';
+                                } else {
+                                  passphraseMatch = await textDialog(
+                                    context: context,
+                                    title: 'Passphrase Match',
+                                    label: 'Enter matching passphrase',
+                                    obscureText: true,
+                                  );
+                                  if (passphraseMatch == null) {
+                                    interfaceModel.closeConnection();
+                                    return;
+                                  }
+                                }
+                              } while (passphrase != passphraseMatch);
+                              await interfaceModel.createServerKey(
+                                newHostData,
+                                passphrase,
+                              );
+                              interfaceModel.closeConnection();
+                              setState(() {});
+                            } else {
+                              // Load from a file.
+                            }
+                          }
+                        }
+                      },
+                    ),
                   ),
                 ],
               ),
