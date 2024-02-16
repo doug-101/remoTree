@@ -6,7 +6,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'common_dialogs.dart';
+import 'file_choice.dart';
 import '../model/file_interface.dart';
+import '../model/file_item.dart';
 import '../model/host_list.dart';
 import '../model/host_data.dart';
 
@@ -150,15 +152,14 @@ class _HostEditState extends State<HostEdit> {
                             title: 'Add Key',
                           );
                           if (method != null) {
+                            final interfaceModel = Provider.of<RemoteInterface>(
+                              context,
+                              listen: false,
+                            );
                             if (method == 'Create on server') {
                               if (_formKey.currentState!.validate()) {
                                 _formKey.currentState!.save();
                               }
-                              final interfaceModel =
-                                  Provider.of<RemoteInterface>(
-                                context,
-                                listen: false,
-                              );
                               await interfaceModel.connectToClient(
                                 hostData: newHostData,
                                 passwordFunction: () async {
@@ -206,6 +207,30 @@ class _HostEditState extends State<HostEdit> {
                               setState(() {});
                             } else {
                               // Load from a file.
+                              final localModel = Provider.of<LocalInterface>(
+                                context,
+                                listen: false,
+                              );
+                              await localModel.refreshFiles();
+                              final FileItem? fileItem = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return FileChoice(
+                                      title: 'Select key file',
+                                    );
+                                  },
+                                ),
+                              );
+                              if (fileItem != null) {
+                                final keyString =
+                                    await localModel.readFileAsString(fileItem);
+                                interfaceModel.addStringKey(
+                                  newHostData,
+                                  keyString,
+                                );
+                                setState(() {});
+                              }
                             }
                           }
                         }

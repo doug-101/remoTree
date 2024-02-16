@@ -244,6 +244,11 @@ class RemoteInterface extends FileInterface {
     }
   }
 
+  /// Add a string private key to the host.
+  void addStringKey(HostData hostData, String keyString) {
+    hostData.key = keyString;
+  }
+
   /// Start the SSH client.
   Future<void> connectToShell() async {
     if (sshClient != null && _sshShell == null) {
