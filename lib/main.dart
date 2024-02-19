@@ -3,10 +3,13 @@
 // Copyright (c) 2023, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
+import 'dart:io';
+import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'gui/common_dialogs.dart' as coomonDialogs;
 import 'gui/frame_view.dart';
 import 'model/file_interface.dart';
 import 'model/host_list.dart';
@@ -39,6 +42,57 @@ Future<void> main(List<String> cmdLineArgs) async {
   WidgetsFlutterBinding.ensureInitialized();
   prefs = await SharedPreferences.getInstance();
 
+  // Use a global navigator key to get a BuildContext for an error dialog.
+  final navigatorKey = GlobalKey<NavigatorState>();
+  // Handle async exceptions.
+  PlatformDispatcher.instance.onError = (error, stack) {
+    var remoteDisconnectFlag = false;
+    String? description;
+    switch (error) {
+      case final SocketException e:
+        // For host not found, etc.
+        description = e.message;
+        remoteDisconnectFlag = true;
+      case final SSHAuthError e:
+        description = e.message;
+        remoteDisconnectFlag = true;
+      case final SSHKeyDecodeError e:
+        description = e.message;
+      case final SftpStatusError e:
+        description = e.message;
+      case final PathAccessException e:
+        description = e.message;
+      default:
+        return false;
+    }
+    navigatorKey.currentState!.push(
+      MaterialPageRoute(
+        builder: (context) {
+          if (remoteDisconnectFlag) {
+            final remoteModel =
+                Provider.of<RemoteInterface>(context, listen: false);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              remoteModel.closeConnection();
+            });
+          }
+          return AlertDialog(
+            title: Text('Error'),
+            content: Text(description!),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    return true;
+  };
+
   runApp(
     MultiProvider(
       providers: [
@@ -61,6 +115,8 @@ Future<void> main(List<String> cmdLineArgs) async {
             title: 'remoTree',
             theme: themeModel.getTheme(),
             home: FrameView(),
+            // Pass key for error handling context.
+            navigatorKey: navigatorKey,
             debugShowCheckedModeBanner: false,
           );
         },

@@ -7,7 +7,6 @@ import 'dart:convert' show Utf8Codec;
 import 'dart:io';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/foundation.dart';
-//import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'file_item.dart';
 import 'host_data.dart';
@@ -59,10 +58,11 @@ abstract class FileInterface extends ChangeNotifier {
   /// Toggle given directory open and load children if needed.
   Future<void> toggleItemOpen(FileItem item) async {
     if (item.type == FileType.directory || item.type == FileType.link) {
-      item.isOpen = !item.isOpen;
-      if (item.isOpen && item.children.isEmpty) {
+      if (!item.isOpen && item.children.isEmpty) {
         await _updateChildren(item);
       }
+      // Set to open after update in case of error during update.
+      item.isOpen = !item.isOpen;
       notifyListeners();
     }
   }
@@ -478,6 +478,7 @@ class RemoteInterface extends FileInterface {
     sshClient?.close();
     _sshShell?.close();
     outputLines.clear();
+    outputLines.add('');
     _sftpClient = null;
     sshClient = null;
     _sshShell = null;
