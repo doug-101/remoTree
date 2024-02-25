@@ -371,6 +371,6 @@ Future<void> aboutDialog({
     applicationName: 'remoTree',
     applicationVersion: 'Version ${packageInfo.version}',
     applicationLegalese: '©2024 by Douglas W. Bell',
-    applicationIcon: Image.asset('assets/images/tree_icon_48.png'),
+    applicationIcon: Image.asset('assets/images/remotree_icon_48.png'),
   );
 }

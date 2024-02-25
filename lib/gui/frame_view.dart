@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'common_dialogs.dart' as commonDialogs;
+import 'help_view.dart';
 import 'host_select.dart';
 import 'shell_view.dart';
 import 'tree_view.dart';
@@ -44,8 +45,21 @@ class _FrameViewState extends State<FrameView> {
               ),
             ),
             ListTile(
+              leading: const Icon(Icons.help_outline),
+              title: const Text('Help View'),
+              onTap: () async {
+                Navigator.pop(context);
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HelpView(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.info_outline),
-              title: const Text('About TreeTag'),
+              title: const Text('About remoTree'),
               onTap: () {
                 Navigator.pop(context);
                 commonDialogs.aboutDialog(context: context);
