@@ -3,13 +3,18 @@
 // Copyright (c) 2024, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
+import 'package:window_manager/window_manager.dart';
 import 'common_dialogs.dart' as commonDialogs;
 import 'help_view.dart';
 import 'host_select.dart';
+import 'settings_edit.dart';
 import 'shell_view.dart';
 import 'tree_view.dart';
+import '../main.dart' show prefs, saveWindowGeo;
 import '../model/file_interface.dart';
 import '../model/file_item.dart';
 
@@ -23,8 +28,48 @@ class FrameView extends StatefulWidget {
   State<FrameView> createState() => _FrameViewState();
 }
 
-class _FrameViewState extends State<FrameView> {
+class _FrameViewState extends State<FrameView> with WindowListener {
   var _tabShown = ViewType.remoteFiles;
+
+  @override
+  void initState() {
+    super.initState();
+    if (defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      windowManager.addListener(this);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      windowManager.removeListener(this);
+    }
+    super.dispose();
+  }
+
+  /// Call main function to save window geometry after a resize.
+  @override
+  void onWindowResize() async {
+    if (defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      await saveWindowGeo();
+    }
+  }
+
+  /// Call main function to save window geometry after a move.
+  @override
+  void onWindowMove() async {
+    if (defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      await saveWindowGeo();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +89,20 @@ class _FrameViewState extends State<FrameView> {
                 ),
               ),
             ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Settings'),
+              onTap: () async {
+                Navigator.pop(context);
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SettingEdit(),
+                  ),
+                );
+              },
+            ),
+            Divider(),
             ListTile(
               leading: const Icon(Icons.help_outline),
               title: const Text('Help View'),
@@ -65,6 +124,17 @@ class _FrameViewState extends State<FrameView> {
                 commonDialogs.aboutDialog(context: context);
               },
             ),
+            if (defaultTargetPlatform == TargetPlatform.linux ||
+                defaultTargetPlatform == TargetPlatform.macOS) ...[
+              Divider(),
+              ListTile(
+                leading: const Icon(Icons.highlight_off_outlined),
+                title: const Text('Quit'),
+                onTap: () {
+                  SystemNavigator.pop();
+                },
+              ),
+            ],
           ],
         ),
       ),

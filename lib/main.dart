@@ -1,6 +1,6 @@
 // main.dart, the main app entry point file.
 // remoTree, an sftp-based remote file manager.
-// Copyright (c) 2023, Douglas W. Bell.
+// Copyright (c) 2024, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
 import 'dart:io';
@@ -9,7 +9,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'gui/common_dialogs.dart' as coomonDialogs;
+import 'package:window_manager/window_manager.dart';
+import 'gui/common_dialogs.dart' as commonDialogs;
 import 'gui/frame_view.dart';
 import 'model/file_interface.dart';
 import 'model/host_list.dart';
@@ -17,6 +18,14 @@ import 'model/theme_model.dart';
 
 /// [prefs] is the global shared_preferences instance.
 late final SharedPreferences prefs;
+
+/// This is initially false to avoid saving window geometry during setup.
+bool allowSaveWindowGeo = false;
+
+const _stdWidth = 730.0;
+const _stdHeight = 630.0;
+const minWidth = 290.0;
+const minHeight = 380.0;
 
 Future<void> main(List<String> cmdLineArgs) async {
   LicenseRegistry.addLicense(
@@ -41,6 +50,37 @@ Future<void> main(List<String> cmdLineArgs) async {
   );
   WidgetsFlutterBinding.ensureInitialized();
   prefs = await SharedPreferences.getInstance();
+  if (defaultTargetPlatform == TargetPlatform.linux ||
+      defaultTargetPlatform == TargetPlatform.windows ||
+      defaultTargetPlatform == TargetPlatform.macOS) {
+    await windowManager.ensureInitialized();
+    final viewScale = prefs.getDouble('view_scale') ?? 1.0;
+    var size = Size(_stdWidth, _stdHeight) * viewScale;
+    double? offsetX, offsetY;
+    if (prefs.getBool('save_window_geo') ?? true) {
+      size = Size(
+            prefs.getDouble('win_size_x') ?? _stdWidth,
+            prefs.getDouble('win_size_y') ?? _stdHeight,
+          ) *
+          viewScale;
+      offsetX = prefs.getDouble('win_pos_x');
+      offsetY = prefs.getDouble('win_pos_y');
+    }
+    // Setting the size twice (early and later) to work around linux problems.
+    await windowManager.setSize(size);
+    windowManager.waitUntilReadyToShow(null, () async {
+      await windowManager.setTitle('remoTree');
+      await windowManager.setMinimumSize(
+        Size(minWidth * viewScale, minHeight * viewScale),
+      );
+      await windowManager.setSize(size);
+      if (offsetX != null && offsetY != null) {
+        await windowManager.setPosition(Offset(offsetX, offsetY));
+      }
+      await windowManager.show();
+      allowSaveWindowGeo = prefs.getBool('save_window_geo') ?? true;
+    });
+  }
 
   // Use a global navigator key to get a BuildContext for an error dialog.
   final navigatorKey = GlobalKey<NavigatorState>();
@@ -111,16 +151,34 @@ Future<void> main(List<String> cmdLineArgs) async {
       ],
       child: Consumer<ThemeModel>(
         builder: (context, themeModel, child) {
-          return MaterialApp(
-            title: 'remoTree',
-            theme: themeModel.getTheme(),
-            home: FrameView(),
-            // Pass key for error handling context.
-            navigatorKey: navigatorKey,
-            debugShowCheckedModeBanner: false,
+          final ratio = prefs.getDouble('view_scale') ?? 1.0;
+          return FractionallySizedBox(
+            widthFactor: 1 / ratio,
+            heightFactor: 1 / ratio,
+            child: Transform.scale(
+              scale: ratio,
+              child: MaterialApp(
+                title: 'remoTree',
+                theme: themeModel.getTheme(),
+                home: FrameView(),
+                // Pass key for error handling context.
+                navigatorKey: navigatorKey,
+                debugShowCheckedModeBanner: false,
+              ),
+            ),
           );
         },
       ),
     ),
   );
+}
+
+Future<void> saveWindowGeo() async {
+  if (!allowSaveWindowGeo) return;
+  final viewScale = prefs.getDouble('view_scale') ?? 1.0;
+  final bounds = await windowManager.getBounds();
+  await prefs.setDouble('win_size_x', bounds.size.width / viewScale);
+  await prefs.setDouble('win_size_y', bounds.size.height / viewScale);
+  await prefs.setDouble('win_pos_x', bounds.left);
+  await prefs.setDouble('win_pos_y', bounds.top);
 }

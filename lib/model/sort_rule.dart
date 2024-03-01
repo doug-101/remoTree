@@ -18,6 +18,7 @@ class SortRule {
 
   SortRule(this.sortType, this.sortDirection);
 
+  /// Constructor to load from stored preferences.
   SortRule.fromPrefs() {
     try {
       sortType = SortType.values.firstWhere(
@@ -32,6 +33,13 @@ class SortRule {
     }
   }
 
+  /// Write current values to saved preferences.
+  Future<void> saveToPrefs() async {
+    await prefs.setString('sort_type', sortType.name);
+    await prefs.setString('sort_direction', sortDirection.name);
+  }
+
+  /// Compare values for sorting.
   Comparator<FileItem> comparator() {
     return (a, b) {
       var result = switch (sortType) {
@@ -53,4 +61,22 @@ class SortRule {
       return result;
     };
   }
+
+  /// Return a human-readable string for the value.
+  String toString() {
+    return '${sortType.name[0].toUpperCase()}${sortType.name.substring(1)}, '
+        '${sortDirection.name[0].toUpperCase()}'
+        '${sortDirection.name.substring(1)}';
+  }
+
+  /// Defined to allow equality comparisons.
+  @override
+  bool operator ==(Object other) {
+    return other is SortRule &&
+        sortType == other.sortType &&
+        sortDirection == other.sortDirection;
+  }
+
+  @override
+  int get hashCode => Object.hash(sortType, sortDirection);
 }

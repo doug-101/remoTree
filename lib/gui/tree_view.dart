@@ -25,7 +25,7 @@ class TreeView<T extends FileInterface> extends StatefulWidget {
 
 class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
   final selectedItems = <FileItem>[];
-  var hideDotFiles = true;
+  var hideDotFiles = prefs.getBool('hide_dot_files') ?? true;
   static final copyItems = <FileItem>[];
   static FileInterface? copyFromModel;
 

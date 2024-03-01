@@ -1,6 +1,6 @@
 // theme_model.dart, retrieves and updates light and dark color themes.
 // remoTree, an sftp-based remote file manager.
-// Copyright (c) 2023, Douglas W. Bell.
+// Copyright (c) 2024, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
 import 'package:flutter/foundation.dart';
@@ -13,7 +13,7 @@ class ThemeModel extends ChangeNotifier {
 
   /// Return the theme based on the current light/dark setting.
   ThemeData getTheme() {
-    final isDark = prefs.getBool('darktheme') ?? false;
+    final isDark = prefs.getBool('dark_theme') ?? false;
     return isDark ? darkTheme : lightTheme;
   }
 

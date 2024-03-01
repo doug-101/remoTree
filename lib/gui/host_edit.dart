@@ -59,6 +59,15 @@ class _HostEditState extends State<HostEdit> {
       appBar: AppBar(
         title: Text(
             widget.origHostData != null ? 'Edit Host Data' : 'New Host Data'),
+        leading: IconButton(
+          icon: const Icon(Icons.check_circle),
+          tooltip: 'Save the host data',
+          onPressed: () async {
+            if (await updateOnPop()) {
+              Navigator.pop(context, null);
+            }
+          },
+        ),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.close),
