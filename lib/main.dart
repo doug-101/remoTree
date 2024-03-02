@@ -102,6 +102,8 @@ Future<void> main(List<String> cmdLineArgs) async {
         description = e.message;
       case final PathAccessException e:
         description = e.message;
+      case final FileSystemException e:
+        description = e.message;
       default:
         return false;
     }

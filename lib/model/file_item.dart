@@ -21,6 +21,7 @@ class FileItem {
   // [mode] and [accessTime] are null if not supported.
   int? mode;
   DateTime? accessTime;
+  String? linkPath;
   final children = <FileItem>[];
   bool isOpen = false;
   int level = 0;
@@ -41,6 +42,8 @@ class FileItem {
     modTime = stat.modified;
     if (type == FileType.file) {
       fileSize = stat.size;
+    } else if (type == FileType.link) {
+      linkPath = (file as Link).targetSync();
     }
     mode = stat.mode;
     accessTime = stat.accessed;

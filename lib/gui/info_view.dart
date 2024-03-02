@@ -29,6 +29,12 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
             width: 600.0,
             child: Consumer<T>(
               builder: (context, model, child) {
+                // Retrieve the link path (async) if not already there.
+                for (var item in fileItems) {
+                  if (item.type == FileType.link && item.linkPath == null) {
+                    model.assignLinkPath(item);
+                  }
+                }
                 return ListView(
                   children: <Widget>[
                     for (var item in fileItems)
@@ -77,6 +83,15 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                   ),
                                 ],
                                 rows: <DataRow>[
+                                  if (item.type == FileType.link)
+                                    DataRow(
+                                      cells: <DataCell>[
+                                        DataCell(Text('Link Target:')),
+                                        DataCell(
+                                          Text(item.linkPath ?? ''),
+                                        ),
+                                      ],
+                                    ),
                                   DataRow(
                                     cells: <DataCell>[
                                       DataCell(Text('Modified:')),

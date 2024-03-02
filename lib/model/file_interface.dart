@@ -39,6 +39,10 @@ abstract class FileInterface extends ChangeNotifier {
 
   Future<void> writeFileAsString(FileItem item, String data);
 
+  Future<String> _linkPath(FileItem link);
+
+  Future<String> _resolvePath(String path);
+
   /// Return path elements for use in breadcrumb navigation.
   List<String> splitRootPath() {
     if (rootPath == null) return <String>[];
@@ -50,7 +54,7 @@ abstract class FileInterface extends ChangeNotifier {
 
   /// Change to the new root path and reload contents.
   Future<void> changeRootPath(String newPath) async {
-    rootPath = newPath;
+    rootPath = await _resolvePath(newPath);
     await _fetchRootFiles();
     notifyListeners();
   }
@@ -174,6 +178,12 @@ abstract class FileInterface extends ChangeNotifier {
   Future<void> changeItemMode(FileItem item, int newMode) async {
     await _changeFileMode(item, newMode);
     item.mode = newMode;
+    notifyListeners();
+  }
+
+  /// Assign link target path and then update the view.
+  void assignLinkPath(FileItem link) async {
+    link.linkPath = await _linkPath(link);
     notifyListeners();
   }
 
@@ -455,8 +465,15 @@ class RemoteInterface extends FileInterface {
   Future<String> readFileAsString(FileItem item) async {
     final sftpFile =
         await _sftpClient!.open(item.fullPath, mode: SftpFileOpenMode.read);
-    final strData = await Utf8Codec().decodeStream(sftpFile.read());
-    sftpFile.close();
+    late final String strData;
+    try {
+      strData = await Utf8Codec().decodeStream(sftpFile.read());
+    } on FormatException {
+      // Matches exception from a local file.
+      throw FileSystemException("Failed to decode data using encoding 'utf-8'");
+    } finally {
+      sftpFile.close();
+    }
     return strData;
   }
 
@@ -468,6 +485,16 @@ class RemoteInterface extends FileInterface {
     );
     await sftpFile.writeBytes(Utf8Codec().encode(data));
     sftpFile.close();
+  }
+
+  /// Return the target path from a link.
+  Future<String> _linkPath(FileItem link) async {
+    return _sftpClient!.readlink(link.fullPath);
+  }
+
+  /// Return an absolute path with symlinks resolved.
+  Future<String> _resolvePath(String path) async {
+    return _sftpClient!.absolute(path);
   }
 
   /// Reset stored items to initial values.
@@ -519,7 +546,7 @@ class LocalInterface extends FileInterface {
       }
     }
     rootItems.clear();
-    final items = Directory(rootPath!).listSync();
+    final items = Directory(rootPath!).listSync(followLinks: false);
     rootItems.addAll(items.map((i) => FileItem.fromFileEntity(i)));
     rootItems.sort(sortRule.comparator());
   }
@@ -528,7 +555,7 @@ class LocalInterface extends FileInterface {
   @override
   Future<void> _updateChildren(FileItem item) async {
     item.children.clear();
-    final items = Directory(item.fullPath).listSync();
+    final items = Directory(item.fullPath).listSync(followLinks: false);
     item.children.addAll(items.map((i) => FileItem.fromFileEntity(i)));
     item.children.sort(sortRule.comparator());
   }
@@ -586,5 +613,15 @@ class LocalInterface extends FileInterface {
   /// Write a file using a UFT-8 codec.
   Future<void> writeFileAsString(FileItem item, String data) async {
     await File(item.fullPath).writeAsString(data);
+  }
+
+  /// Return the target path from a link.
+  Future<String> _linkPath(FileItem link) async {
+    return Link(link.fullPath).target();
+  }
+
+  /// Return an absolute path with symlinks resolved.
+  Future<String> _resolvePath(String path) async {
+    return File(path).resolveSymbolicLinks();
   }
 }
