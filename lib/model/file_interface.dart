@@ -6,6 +6,7 @@
 import 'dart:convert' show Utf8Codec;
 import 'dart:io';
 import 'package:dartssh2/dartssh2.dart';
+import 'package:external_path/external_path.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'file_item.dart';
@@ -54,8 +55,15 @@ abstract class FileInterface extends ChangeNotifier {
 
   /// Change to the new root path and reload contents.
   Future<void> changeRootPath(String newPath) async {
+    final origPath = rootPath;
     rootPath = await _resolvePath(newPath);
-    await _fetchRootFiles();
+    try {
+      await _fetchRootFiles();
+    } on Exception {
+      rootPath = origPath;
+      await _fetchRootFiles();
+      rethrow;
+    }
     notifyListeners();
   }
 
@@ -520,11 +528,9 @@ class LocalInterface extends FileInterface {
   SortRule sortRule;
 
   /// Load local file info at startup.
-  LocalInterface() : sortRule = SortRule.fromPrefs() {
-    _initialLoad();
-  }
+  LocalInterface() : sortRule = SortRule.fromPrefs();
 
-  Future<void> _initialLoad() async {
+  Future<void> initialFileLoad() async {
     await _fetchRootFiles();
     notifyListeners();
   }
@@ -534,7 +540,8 @@ class LocalInterface extends FileInterface {
   Future<void> _fetchRootFiles() async {
     if (rootPath == null) {
       if (Platform.isAndroid) {
-        rootPath = (await getExternalStorageDirectory())?.path;
+        // Use ExternalPath, since path_provider just gives loacal app dirs.
+        rootPath = (await ExternalPath.getExternalStorageDirectories())[0];
       }
       if (rootPath == null) {
         // Use app directory if external storage isn't available.

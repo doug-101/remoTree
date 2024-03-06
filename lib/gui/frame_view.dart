@@ -3,10 +3,12 @@
 // Copyright (c) 2024, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'common_dialogs.dart' as commonDialogs;
 import 'help_view.dart';
@@ -30,6 +32,7 @@ class FrameView extends StatefulWidget {
 
 class _FrameViewState extends State<FrameView> with WindowListener {
   var _tabShown = ViewType.remoteFiles;
+  var _areLocalFilesRead = false;
 
   @override
   void initState() {
@@ -140,7 +143,25 @@ class _FrameViewState extends State<FrameView> with WindowListener {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tabShown.index,
-        onDestinationSelected: (int index) {
+        onDestinationSelected: (int index) async {
+          if (ViewType.values[index] == ViewType.localFiles &&
+              !_areLocalFilesRead) {
+            if (Platform.isLinux ||
+                Platform.isWindows ||
+                Platform.isMacOS ||
+                await Permission.manageExternalStorage.request().isGranted) {
+              final model = Provider.of<LocalInterface>(context, listen: false);
+              await model.initialFileLoad();
+              _areLocalFilesRead = true;
+            } else if (await Permission.manageExternalStorage
+                .request()
+                .isPermanentlyDenied) {
+              await openAppSettings();
+            }
+          }
+          if (Platform.isAndroid || Platform.isIOS) {
+            SystemChannels.textInput.invokeMethod('TextInput.hide');
+          }
           setState(() {
             _tabShown = ViewType.values[index];
           });
