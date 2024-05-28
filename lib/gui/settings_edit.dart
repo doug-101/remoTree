@@ -248,11 +248,11 @@ class SortFormField extends FormField<SortRule> {
                       Padding(
                         padding: EdgeInsets.only(top: 10.0),
                         child: Text(heading ?? 'Default Sorting',
-                            style: Theme.of(state.context).textTheme.caption),
+                            style: Theme.of(state.context).textTheme.bodySmall),
                       ),
                       Text(
                         state.value!.toString(),
-                        style: Theme.of(state.context).textTheme.subtitle1,
+                        style: Theme.of(state.context).textTheme.titleMedium,
                       ),
                     ],
                   ),
