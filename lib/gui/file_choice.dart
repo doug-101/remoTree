@@ -6,8 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'common_dialogs.dart' as commonDialogs;
-import '../main.dart' show prefs;
+import 'common_dialogs.dart' as common_dialogs;
 import '../model/file_interface.dart';
 import '../model/file_item.dart';
 
@@ -16,7 +15,7 @@ class FileChoice extends StatefulWidget {
   final String? title;
   final bool selectFilesOnly;
 
-  FileChoice({super.key, this.title, this.selectFilesOnly = true});
+  const FileChoice({super.key, this.title, this.selectFilesOnly = true});
 
   @override
   State<FileChoice> createState() => _FileChoiceState();
@@ -42,7 +41,7 @@ class _FileChoiceState extends State<FileChoice> {
                     },
                   )
                 // Take up space when check button is hidden.
-                : SizedBox(width: 24.0),
+                : const SizedBox(width: 24.0),
             actions: <Widget>[
               IconButton(
                 // Show hidden files.
@@ -61,7 +60,7 @@ class _FileChoiceState extends State<FileChoice> {
                 icon: const Icon(Icons.sort),
                 tooltip: 'Change Sort Rule',
                 onPressed: () async {
-                  final newSortRule = await commonDialogs.sortRuleDialog(
+                  final newSortRule = await common_dialogs.sortRuleDialog(
                     context: context,
                     initialRule: model.sortRule,
                   );
@@ -180,7 +179,7 @@ class _FileChoiceState extends State<FileChoice> {
                   ),
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(left: 4.0),
+                      padding: const EdgeInsets.only(left: 4.0),
                       child: Text.rich(
                         TextSpan(
                           text: item.filename,
@@ -192,8 +191,8 @@ class _FileChoiceState extends State<FileChoice> {
                           ),
                           children: <TextSpan>[
                             TextSpan(
-                              text: '\n${dateString}${sizeString}',
-                              style: TextStyle(
+                              text: '\n$dateString$sizeString',
+                              style: const TextStyle(
                                 fontFamily: 'RobotoMono',
                                 fontSize: 10,
                               ),

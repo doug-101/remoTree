@@ -5,7 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'common_dialogs.dart' as commonDialogs;
+import 'common_dialogs.dart' as common_dialogs;
 import 'host_edit.dart';
 import '../model/file_interface.dart';
 import '../model/host_list.dart';
@@ -14,13 +14,13 @@ enum MenuItems { edit, delete }
 
 /// Shows and allows selection of available hosts.
 class HostSelect extends StatelessWidget {
-  HostSelect({super.key});
+  const HostSelect({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('remoTree - Remote'),
+        title: const Text('remoTree - Remote'),
         leading: IconButton(
           icon: const Icon(Icons.menu),
           tooltip: 'Open Drawer Menu',
@@ -38,7 +38,7 @@ class HostSelect extends StatelessWidget {
               await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => HostEdit(),
+                  builder: (context) => const HostEdit(),
                 ),
               );
             },
@@ -60,7 +60,7 @@ class HostSelect extends StatelessWidget {
                           title: Text(data.displayName),
                           subtitle: Text(
                             data.nameAndAddress,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontFamily: 'RobotoMono',
                             ),
                           ),
@@ -79,7 +79,7 @@ class HostSelect extends StatelessWidget {
                                   );
                                 case MenuItems.delete:
                                   final deleteOk =
-                                      await commonDialogs.okCancelDialog(
+                                      await common_dialogs.okCancelDialog(
                                     context: context,
                                     title: 'Confirm Delete',
                                     label: 'Delete this entry?',
@@ -90,13 +90,13 @@ class HostSelect extends StatelessWidget {
                               }
                             },
                             itemBuilder: (context) => [
-                              PopupMenuItem<MenuItems>(
-                                child: Text('Edit entry'),
+                              const PopupMenuItem<MenuItems>(
                                 value: MenuItems.edit,
+                                child: Text('Edit entry'),
                               ),
-                              PopupMenuItem<MenuItems>(
-                                child: Text('Delete entry'),
+                              const PopupMenuItem<MenuItems>(
                                 value: MenuItems.delete,
+                                child: Text('Delete entry'),
                               ),
                             ],
                           ),
@@ -108,20 +108,21 @@ class HostSelect extends StatelessWidget {
                             await interfaceModel.connectToClient(
                               hostData: data,
                               passwordFunction: () async {
-                                return commonDialogs.textDialog(
+                                return common_dialogs.textDialog(
                                   context: context,
                                   title: 'Enter password',
                                   obscureText: true,
                                 );
                               },
                               keyPassphraseFunction: () async {
-                                return commonDialogs.textDialog(
+                                return common_dialogs.textDialog(
                                   context: context,
                                   title: 'Enter key passphrase',
                                   obscureText: true,
                                 );
                               },
                             );
+                            if (!context.mounted) return;
                             Navigator.pushNamed(
                               context,
                               '/remote',

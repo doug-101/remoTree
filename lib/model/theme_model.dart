@@ -3,7 +3,6 @@
 // Copyright (c) 2024, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../main.dart' show prefs;
 
@@ -35,9 +34,6 @@ class ThemeModel extends ChangeNotifier {
       // Surface is set the same as tiles.
       surface: Colors.grey.shade50,
       onSurface: Colors.black,
-      // Background is used under other items.
-      background: Colors.white,
-      onBackground: Colors.black,
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.teal.shade700,
@@ -69,11 +65,8 @@ class ThemeModel extends ChangeNotifier {
       // Surface is set the same as tiles.
       surface: Colors.grey.shade900,
       onSurface: Colors.white,
-      // Background is used under other items.
-      background: Colors.black,
-      onBackground: Colors.white70,
     ),
-    appBarTheme: AppBarTheme(
+    appBarTheme: const AppBarTheme(
       backgroundColor: Colors.white12,
       foregroundColor: Colors.teal,
     ),

@@ -5,19 +5,16 @@
 
 import 'dart:io';
 import 'dart:math';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'common_dialogs.dart' as commonDialogs;
 import '../model/file_interface.dart';
-import '../model/file_item.dart';
 
 // The view for interacting with the shell.
 class ShellView extends StatefulWidget {
   final String? initPath;
 
-  ShellView({super.key, this.initPath});
+  const ShellView({super.key, this.initPath});
 
   @override
   State<ShellView> createState() => _ShellViewState();
@@ -57,7 +54,7 @@ class _ShellViewState extends State<ShellView> {
         }
         return Scaffold(
           appBar: AppBar(
-            title: Text('remoTree - Terminal'),
+            title: const Text('remoTree - Terminal'),
             leading: IconButton(
               icon: const Icon(Icons.menu),
               tooltip: 'Open Drawer Menu',
@@ -90,9 +87,9 @@ class _ShellViewState extends State<ShellView> {
               autofocus: true,
               onKeyEvent: (node, event) {
                 if (event is KeyDownEvent) {
-                  final _char = event.character;
-                  if (_char != null) {
-                    model.sendToShell(_char);
+                  final char = event.character;
+                  if (char != null) {
+                    model.sendToShell(char);
                   } else {
                     final escStr = String.fromCharCode(0x1b);
                     switch (event.logicalKey) {
@@ -130,7 +127,7 @@ class _ShellViewState extends State<ShellView> {
                           if (widthPerChar == 0.0) {
                             // Calculate width of a wide char for view width.
                             final painter = TextPainter(
-                              text: TextSpan(
+                              text: const TextSpan(
                                 text: 'WWWWWWWWWW',
                                 style: TextStyle(
                                   fontFamily: 'RobotoMono',
@@ -166,7 +163,7 @@ class _ShellViewState extends State<ShellView> {
                                   return Text(
                                     model.outputLines[
                                         model.outputLines.length - index - 1],
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontFamily: 'RobotoMono',
                                     ),
                                   );

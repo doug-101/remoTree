@@ -6,7 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'common_dialogs.dart' as commonDialogs;
+import 'common_dialogs.dart' as common_dialogs;
 import 'edit_view.dart';
 import 'info_view.dart';
 import '../main.dart' show prefs;
@@ -17,7 +17,7 @@ import '../model/file_item.dart';
 ///
 /// Uses generics to select remote or local models.
 class TreeView<T extends FileInterface> extends StatefulWidget {
-  TreeView({super.key});
+  const TreeView({super.key});
 
   @override
   State<TreeView<T>> createState() => _TreeViewState<T>();
@@ -191,7 +191,7 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                   icon: const Icon(Icons.sort),
                   tooltip: 'Change Sort Rule',
                   onPressed: () async {
-                    final newSortRule = await commonDialogs.sortRuleDialog(
+                    final newSortRule = await common_dialogs.sortRuleDialog(
                       context: context,
                       initialRule: model.sortRule,
                     );
@@ -316,7 +316,7 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                   ),
                   Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(left: 4.0),
+                      padding: const EdgeInsets.only(left: 4.0),
                       child: Text.rich(
                         TextSpan(
                           text: item.filename,
@@ -328,8 +328,8 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                           ),
                           children: <TextSpan>[
                             TextSpan(
-                              text: '\n${dateString}${sizeString}',
-                              style: TextStyle(
+                              text: '\n$dateString$sizeString',
+                              style: const TextStyle(
                                 fontFamily: 'RobotoMono',
                                 fontSize: 10,
                               ),

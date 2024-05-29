@@ -44,6 +44,11 @@ abstract class FileInterface extends ChangeNotifier {
 
   Future<String> _resolvePath(String path);
 
+  /// Force an update of the views.
+  void updateViews() {
+    notifyListeners();
+  }
+
   /// Return path elements for use in breadcrumb navigation.
   List<String> splitRootPath() {
     if (rootPath == null) return <String>[];
@@ -205,16 +210,14 @@ abstract class FileInterface extends ChangeNotifier {
 
 /// Superclass for SFTP connections.
 class RemoteInterface extends FileInterface {
-  String? currentConnectName;
   SSHClient? sshClient;
   SftpClient? _sftpClient;
-  String? rootPath;
-  final rootItems = <FileItem>[];
-  SortRule sortRule;
   SSHSession? _sshShell;
   final outputLines = <String>[''];
 
-  RemoteInterface() : sortRule = SortRule.fromPrefs();
+  RemoteInterface() {
+    sortRule = SortRule.fromPrefs();
+  }
 
   bool get isConnected => sshClient != null;
 
@@ -245,7 +248,7 @@ class RemoteInterface extends FileInterface {
   Future<void> createServerKey(HostData hostData, String passphrase) async {
     if (sshClient != null && _sftpClient == null) {
       _sftpClient = await sshClient!.sftp();
-      String tmpDir = Utf8Codec()
+      String tmpDir = const Utf8Codec()
           .decode(await sshClient!.run('mktemp -d -p /tmp remotree-XXXXXX'))
           .trim();
       await sshClient!.run(
@@ -270,10 +273,10 @@ class RemoteInterface extends FileInterface {
   /// Start the SSH client.
   Future<void> connectToShell() async {
     if (sshClient != null && _sshShell == null) {
-      _sshShell = await sshClient!.shell(pty: SSHPtyConfig(type: 'dumb'));
+      _sshShell = await sshClient!.shell(pty: const SSHPtyConfig(type: 'dumb'));
       _sshShell!.stdout.listen((data) {
-        final _debugMode = false;
-        if (!_debugMode) {
+        const debugMode = false;
+        if (!debugMode) {
           var atCR = false;
           var inEsc = false;
           final line = <int>[];
@@ -297,7 +300,7 @@ class RemoteInterface extends FileInterface {
                   inEsc = false;
                 }
                 if (line.isNotEmpty) {
-                  outputLines.last = Utf8Codec().decode(line);
+                  outputLines.last = const Utf8Codec().decode(line);
                 }
                 outputLines.add('');
                 line.clear();
@@ -321,7 +324,7 @@ class RemoteInterface extends FileInterface {
             // Remove typical length of escaped characters.
             line.removeRange(0, line.length > 7 ? 7 : line.length);
           }
-          outputLines.last = Utf8Codec().decode(line);
+          outputLines.last = const Utf8Codec().decode(line);
           // End non-debug mode.
         } else {
           // Start debug mode.
@@ -334,7 +337,7 @@ class RemoteInterface extends FileInterface {
                 if (printables.every((i) => i == 32)) {
                   outputLines.add('<<<spaces>>>');
                 } else {
-                  outputLines.add(Utf8Codec().decode(printables));
+                  outputLines.add(const Utf8Codec().decode(printables));
                 }
                 printables.clear();
               }
@@ -354,7 +357,7 @@ class RemoteInterface extends FileInterface {
             if (printables.every((i) => i == 32)) {
               outputLines.add('<<<spaces>>>');
             } else {
-              outputLines.add(Utf8Codec().decode(printables));
+              outputLines.add(const Utf8Codec().decode(printables));
             }
             printables.clear();
           }
@@ -364,14 +367,14 @@ class RemoteInterface extends FileInterface {
         notifyListeners();
       });
       _sshShell!.stderr.listen((data) {
-        print('Standard Error Content');
+        assert(true, 'Received Standard Error Content');
       });
     }
   }
 
   /// Send the given string as a SSH command.
   void sendToShell(String cmd) {
-    _sshShell!.write(Utf8Codec().encode(cmd));
+    _sshShell!.write(const Utf8Codec().encode(cmd));
   }
 
   /// Start the SFTP client and reload contents.
@@ -457,11 +460,13 @@ class RemoteInterface extends FileInterface {
   }
 
   /// Rename the given file.
+  @override
   Future<void> _renameFile(FileItem item, String newName) async {
     await _sftpClient!.rename(item.fullPath, '${item.path}/$newName');
   }
 
   /// Change the premissions of the given file.
+  @override
   Future<void> _changeFileMode(FileItem item, int newMode) async {
     await _sftpClient!.setStat(
       item.fullPath,
@@ -470,15 +475,18 @@ class RemoteInterface extends FileInterface {
   }
 
   /// Read a file using a UTF-8 codec.
+  @override
   Future<String> readFileAsString(FileItem item) async {
     final sftpFile =
         await _sftpClient!.open(item.fullPath, mode: SftpFileOpenMode.read);
     late final String strData;
     try {
-      strData = await Utf8Codec().decodeStream(sftpFile.read());
+      strData = await const Utf8Codec().decodeStream(sftpFile.read());
     } on FormatException {
       // Matches exception from a local file.
-      throw FileSystemException("Failed to decode data using encoding 'utf-8'");
+      throw const FileSystemException(
+        "Failed to decode data using encoding 'utf-8'",
+      );
     } finally {
       sftpFile.close();
     }
@@ -486,21 +494,24 @@ class RemoteInterface extends FileInterface {
   }
 
   /// Write a file using a UFT-8 codec.
+  @override
   Future<void> writeFileAsString(FileItem item, String data) async {
     final sftpFile = await _sftpClient!.open(
       item.fullPath,
       mode: SftpFileOpenMode.create | SftpFileOpenMode.write,
     );
-    await sftpFile.writeBytes(Utf8Codec().encode(data));
+    await sftpFile.writeBytes(const Utf8Codec().encode(data));
     sftpFile.close();
   }
 
   /// Return the target path from a link.
+  @override
   Future<String> _linkPath(FileItem link) async {
     return _sftpClient!.readlink(link.fullPath);
   }
 
   /// Return an absolute path with symlinks resolved.
+  @override
   Future<String> _resolvePath(String path) async {
     return _sftpClient!.absolute(path);
   }
@@ -522,13 +533,10 @@ class RemoteInterface extends FileInterface {
 }
 
 class LocalInterface extends FileInterface {
-  String? currentConnectName = 'Local';
-  String? rootPath;
-  final rootItems = <FileItem>[];
-  SortRule sortRule;
-
   /// Load local file info at startup.
-  LocalInterface() : sortRule = SortRule.fromPrefs();
+  LocalInterface() {
+    sortRule = SortRule.fromPrefs();
+  }
 
   Future<void> initialFileLoad() async {
     await _fetchRootFiles();
@@ -543,10 +551,8 @@ class LocalInterface extends FileInterface {
         // Use ExternalPath, since path_provider just gives loacal app dirs.
         rootPath = (await ExternalPath.getExternalStorageDirectories())[0];
       }
-      if (rootPath == null) {
-        // Use app directory if external storage isn't available.
-        rootPath = (await getApplicationDocumentsDirectory()).path;
-      }
+      // Use app directory if external storage isn't available.
+      rootPath ??= (await getApplicationDocumentsDirectory()).path;
       if (rootPath!.endsWith('/')) {
         // Remove trailing separator to make usable in [splitRootPath].
         rootPath = rootPath!.substring(0, rootPath!.length - 1);
@@ -599,6 +605,7 @@ class LocalInterface extends FileInterface {
   }
 
   /// Rename the given file.
+  @override
   Future<void> _renameFile(FileItem item, String newName) async {
     if (item.type == FileType.directory) {
       await Directory(item.fullPath).rename('${item.path}/$newName');
@@ -608,26 +615,31 @@ class LocalInterface extends FileInterface {
   }
 
   /// Change the premissions of the given file.
+  @override
   Future<void> _changeFileMode(FileItem item, int newMode) async {
     // No operation - can't change mode on local files in dart io.
   }
 
   /// Read a file using a UTF-8 codec.
+  @override
   Future<String> readFileAsString(FileItem item) async {
     return File(item.fullPath).readAsString();
   }
 
   /// Write a file using a UFT-8 codec.
+  @override
   Future<void> writeFileAsString(FileItem item, String data) async {
     await File(item.fullPath).writeAsString(data);
   }
 
   /// Return the target path from a link.
+  @override
   Future<String> _linkPath(FileItem link) async {
     return Link(link.fullPath).target();
   }
 
   /// Return an absolute path with symlinks resolved.
+  @override
   Future<String> _resolvePath(String path) async {
     return File(path).resolveSymbolicLinks();
   }

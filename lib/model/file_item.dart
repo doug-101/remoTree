@@ -6,7 +6,6 @@
 import 'dart:io';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:path/path.dart' as p;
-import 'file_interface.dart';
 
 enum FileType { directory, file, link, other }
 
@@ -33,9 +32,9 @@ class FileItem {
       : path = p.dirname(file.path),
         filename = p.basename(file.path),
         type = switch (file) {
-          (Directory d) => FileType.directory,
-          (File f) => FileType.file,
-          (Link l) => FileType.link,
+          (Directory _) => FileType.directory,
+          (File _) => FileType.file,
+          (Link _) => FileType.link,
           _ => FileType.other,
         } {
     final stat = file.statSync();
@@ -64,7 +63,7 @@ class FileItem {
     if (type == FileType.file) {
       fileSize = fileInfo.attr.size ?? 0;
     }
-    mode = fileInfo.attr?.mode?.value;
+    mode = fileInfo.attr.mode?.value;
     if (fileInfo.attr.accessTime != null) {
       accessTime = DateTime.fromMillisecondsSinceEpoch(
         (fileInfo.attr.accessTime!) * 1000,
@@ -99,7 +98,7 @@ class FileItem {
   String get fileModeString {
     if (mode == null) return '';
     final permissions = mode! & 0xFFF;
-    final codes = const [
+    const codes = [
       '---',
       '--x',
       '-w-',

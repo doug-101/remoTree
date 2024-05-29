@@ -12,6 +12,8 @@ const pathPrefix = 'assets/help/';
 
 /// Provides a view with Markdown output of the README file.
 class HelpView extends StatefulWidget {
+  const HelpView({super.key});
+
   @override
   State<HelpView> createState() => _HelpViewState();
 }
@@ -44,14 +46,14 @@ class _HelpViewState extends State<HelpView> {
     final pagePos = _pageList.indexOf(_pageHistory.last);
     // Size placeholder for hidden icons, includes 8/side padding.
     final iconSize = (IconTheme.of(context).size ?? 24.0) + 16.0;
-    return WillPopScope(
-      onWillPop: () async {
-        if (_pageHistory.length > 1) {
+    return PopScope(
+      // Avoid pop due to back button until page history is empty.
+      canPop: _pageHistory.length <= 1,
+      onPopInvoked: (bool didPop) async {
+        if (!didPop) {
           _pageHistory.removeLast();
           _loadContent();
-          return false;
         }
-        return true;
       },
       child: Scaffold(
         appBar: AppBar(

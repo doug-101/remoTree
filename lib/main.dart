@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
-import 'gui/common_dialogs.dart' as commonDialogs;
 import 'gui/frame_view.dart';
 import 'model/file_interface.dart';
 import 'model/host_list.dart';
@@ -55,7 +54,7 @@ Future<void> main(List<String> cmdLineArgs) async {
       defaultTargetPlatform == TargetPlatform.macOS) {
     await windowManager.ensureInitialized();
     final viewScale = prefs.getDouble('view_scale') ?? 1.0;
-    var size = Size(_stdWidth, _stdHeight) * viewScale;
+    var size = const Size(_stdWidth, _stdHeight) * viewScale;
     double? offsetX, offsetY;
     if (prefs.getBool('save_window_geo') ?? true) {
       size = Size(
@@ -118,7 +117,7 @@ Future<void> main(List<String> cmdLineArgs) async {
             });
           }
           return AlertDialog(
-            title: Text('Error'),
+            title: const Text('Error'),
             content: Text(description!),
             actions: <Widget>[
               TextButton(
@@ -162,7 +161,7 @@ Future<void> main(List<String> cmdLineArgs) async {
               child: MaterialApp(
                 title: 'remoTree',
                 theme: themeModel.getTheme(),
-                home: FrameView(),
+                home: const FrameView(),
                 // Pass key for error handling context.
                 navigatorKey: navigatorKey,
                 debugShowCheckedModeBanner: false,

@@ -16,7 +16,7 @@ import '../model/theme_model.dart';
 
 /// A user settings view.
 class SettingEdit extends StatefulWidget {
-  SettingEdit({super.key});
+  const SettingEdit({super.key});
 
   @override
   State<SettingEdit> createState() => _SettingEditState();
@@ -30,7 +30,10 @@ class _SettingEditState extends State<SettingEdit> {
   final origViewScale = prefs.getDouble('view_scale') ?? 1.0;
   final origSort = SortRule.fromPrefs();
 
-  Future<bool> updateOnPop() async {
+  /// Prepare to close by validating and updating.
+  ///
+  /// Returns true if it's ok to close.
+  Future<bool> _handleClose() async {
     if (_cancelFlag) return true;
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -56,14 +59,15 @@ class _SettingEditState extends State<SettingEdit> {
           Size(minWidth * viewScale, minHeight * viewScale),
         );
       }
+      if (!mounted) return false;
       final localModel = Provider.of<LocalInterface>(context, listen: false);
       final remoteModel = Provider.of<RemoteInterface>(context, listen: false);
       if (origSort != SortRule.fromPrefs()) {
         localModel.changeSortRule(SortRule.fromPrefs());
         remoteModel.changeSortRule(SortRule.fromPrefs());
       } else {
-        localModel.notifyListeners();
-        remoteModel.notifyListeners();
+        localModel.updateViews();
+        remoteModel.updateViews();
       }
       final themeModel = Provider.of<ThemeModel>(context, listen: false);
       themeModel.updateTheme();
@@ -76,7 +80,7 @@ class _SettingEditState extends State<SettingEdit> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings - remoTree'),
+        title: const Text('Settings - remoTree'),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.close),
@@ -90,7 +94,15 @@ class _SettingEditState extends State<SettingEdit> {
       ),
       body: Form(
         key: _formKey,
-        onWillPop: updateOnPop,
+        canPop: false,
+        onPopInvoked: (bool didPop) async {
+          if (!didPop && await _handleClose()) {
+            // Pop manually (bypass canPop) if update is complete.
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            }
+          }
+        },
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Align(
@@ -177,14 +189,11 @@ class _SettingEditState extends State<SettingEdit> {
 /// A [FormField] widget for boolean settings.
 class BoolFormField extends FormField<bool> {
   BoolFormField({
-    bool? initialValue,
+    super.initialValue,
     String? heading,
-    Key? key,
-    FormFieldSetter<bool>? onSaved,
+    super.key,
+    super.onSaved,
   }) : super(
-          onSaved: onSaved,
-          initialValue: initialValue,
-          key: key,
           builder: (FormFieldState<bool> state) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,7 +216,7 @@ class BoolFormField extends FormField<bool> {
                     ],
                   ),
                 ),
-                Divider(
+                const Divider(
                   thickness: 3.0,
                   height: 6.0,
                 ),
@@ -220,14 +229,11 @@ class BoolFormField extends FormField<bool> {
 /// A [FormField] widget for setting the default sorting method.
 class SortFormField extends FormField<SortRule> {
   SortFormField({
-    SortRule? initialValue,
+    super.initialValue,
     String? heading,
-    Key? key,
-    FormFieldSetter<SortRule>? onSaved,
+    super.key,
+    super.onSaved,
   }) : super(
-          onSaved: onSaved,
-          initialValue: initialValue,
-          key: key,
           builder: (FormFieldState<SortRule> state) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -246,7 +252,7 @@ class SortFormField extends FormField<SortRule> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Padding(
-                        padding: EdgeInsets.only(top: 10.0),
+                        padding: const EdgeInsets.only(top: 10.0),
                         child: Text(heading ?? 'Default Sorting',
                             style: Theme.of(state.context).textTheme.bodySmall),
                       ),
@@ -257,7 +263,7 @@ class SortFormField extends FormField<SortRule> {
                     ],
                   ),
                 ),
-                Divider(
+                const Divider(
                   thickness: 3.0,
                   height: 9.0,
                 ),

@@ -101,7 +101,7 @@ Future<SortRule?> sortRuleDialog({
       var sortType = initialRule.sortType;
       var sortDir = initialRule.sortDirection;
       return AlertDialog(
-        title: Text('Sorting Rule'),
+        title: const Text('Sorting Rule'),
         content: StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return Column(
@@ -122,7 +122,7 @@ Future<SortRule?> sortRuleDialog({
                       }
                     },
                   ),
-                Divider(),
+                const Divider(),
                 for (var item in SortDirection.values)
                   RadioListTile<SortDirection>(
                     title: Text(
@@ -169,7 +169,7 @@ Future<String?> filenameDialog({
   String title = 'New Filename',
   String? label,
 }) async {
-  final _filenameEditKey = GlobalKey<FormFieldState>();
+  final filenameEditKey = GlobalKey<FormFieldState>();
   return showDialog<String>(
     context: context,
     barrierDismissible: false,
@@ -177,7 +177,7 @@ Future<String?> filenameDialog({
       return AlertDialog(
         title: Text(title),
         content: TextFormField(
-          key: _filenameEditKey,
+          key: filenameEditKey,
           decoration: InputDecoration(labelText: label ?? ''),
           autofocus: true,
           initialValue: initName ?? '',
@@ -196,9 +196,9 @@ Future<String?> filenameDialog({
           },
           onFieldSubmitted: (value) {
             // Complete the dialog when the user presses enter.
-            if (_filenameEditKey.currentState!.validate()) {
+            if (filenameEditKey.currentState!.validate()) {
               Navigator.pop(
-                  context, _filenameEditKey.currentState!.value.trim());
+                  context, filenameEditKey.currentState!.value.trim());
             }
           },
         ),
@@ -206,9 +206,9 @@ Future<String?> filenameDialog({
           TextButton(
             child: const Text('OK'),
             onPressed: () {
-              if (_filenameEditKey.currentState!.validate()) {
+              if (filenameEditKey.currentState!.validate()) {
                 Navigator.pop(
-                    context, _filenameEditKey.currentState!.value.trim());
+                    context, filenameEditKey.currentState!.value.trim());
               }
             },
           ),
@@ -233,9 +233,9 @@ Future<int?> modeSetDialog({
     builder: (BuildContext context) {
       var mode = initialMode;
       // The mask for each permission bit, in typical order.
-      final masks = const [0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1];
+      const masks = [0x100, 0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1];
       return AlertDialog(
-        title: Text('File Mode'),
+        title: const Text('File Mode'),
         content: StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             //
@@ -257,7 +257,7 @@ Future<int?> modeSetDialog({
             }
 
             return DataTable(
-              columns: <DataColumn>[
+              columns: const <DataColumn>[
                 DataColumn(label: Text(''), numeric: true),
                 DataColumn(label: Text('  R  ')),
                 DataColumn(label: Text('  W  ')),
@@ -266,19 +266,19 @@ Future<int?> modeSetDialog({
               rows: <DataRow>[
                 DataRow(
                   cells: <DataCell>[
-                    DataCell(Text('user')),
+                    const DataCell(Text('user')),
                     for (var i = 0; i < 3; i++) checkboxGen(i),
                   ],
                 ),
                 DataRow(
                   cells: <DataCell>[
-                    DataCell(Text('group')),
+                    const DataCell(Text('group')),
                     for (var i = 3; i < 6; i++) checkboxGen(i),
                   ],
                 ),
                 DataRow(
                   cells: <DataCell>[
-                    DataCell(Text('other')),
+                    const DataCell(Text('other')),
                     for (var i = 6; i < 9; i++) checkboxGen(i),
                   ],
                 ),
@@ -316,7 +316,7 @@ Future<String?> textDialog({
   bool allowEmpty = false,
   bool obscureText = false,
 }) async {
-  final _textEditKey = GlobalKey<FormFieldState>();
+  final textEditKey = GlobalKey<FormFieldState>();
   return showDialog<String>(
     context: context,
     barrierDismissible: false,
@@ -324,7 +324,7 @@ Future<String?> textDialog({
       return AlertDialog(
         title: Text(title),
         content: TextFormField(
-          key: _textEditKey,
+          key: textEditKey,
           decoration: InputDecoration(labelText: label),
           autofocus: true,
           obscureText: obscureText,
@@ -337,8 +337,8 @@ Future<String?> textDialog({
           },
           onFieldSubmitted: (value) {
             // Complete the dialog when the user presses enter.
-            if (_textEditKey.currentState!.validate()) {
-              Navigator.pop(context, _textEditKey.currentState!.value);
+            if (textEditKey.currentState!.validate()) {
+              Navigator.pop(context, textEditKey.currentState!.value);
             }
           },
         ),
@@ -346,8 +346,8 @@ Future<String?> textDialog({
           TextButton(
             child: const Text('OK'),
             onPressed: () {
-              if (_textEditKey.currentState!.validate()) {
-                Navigator.pop(context, _textEditKey.currentState!.value);
+              if (textEditKey.currentState!.validate()) {
+                Navigator.pop(context, textEditKey.currentState!.value);
               }
             },
           ),
@@ -366,6 +366,7 @@ Future<void> aboutDialog({
   required BuildContext context,
 }) async {
   final packageInfo = await PackageInfo.fromPlatform();
+  if (!context.mounted) return;
   showAboutDialog(
     context: context,
     applicationName: 'remoTree',

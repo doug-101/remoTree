@@ -6,7 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'common_dialogs.dart' as commonDialogs;
+import 'common_dialogs.dart' as common_dialogs;
 import '../model/file_interface.dart';
 import '../model/file_item.dart';
 
@@ -14,13 +14,13 @@ import '../model/file_item.dart';
 class InfoView<T extends FileInterface> extends StatelessWidget {
   final List<FileItem> fileItems;
 
-  InfoView({super.key, required this.fileItems});
+  const InfoView({super.key, required this.fileItems});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('remoTree - Details'),
+        title: const Text('remoTree - Details'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -56,7 +56,7 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                               DataTable(
                                 dividerThickness: 0.001,
                                 columns: <DataColumn>[
-                                  DataColumn(
+                                  const DataColumn(
                                     numeric: true,
                                     label: Text('Name:'),
                                   ),
@@ -71,7 +71,7 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                       ),
                                       onTap: () async {
                                         final newName =
-                                            await commonDialogs.filenameDialog(
+                                            await common_dialogs.filenameDialog(
                                           context: context,
                                           initName: item.filename,
                                         );
@@ -86,7 +86,7 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                   if (item.type == FileType.link)
                                     DataRow(
                                       cells: <DataCell>[
-                                        DataCell(Text('Link Target:')),
+                                        const DataCell(Text('Link Target:')),
                                         DataCell(
                                           Text(item.linkPath ?? ''),
                                         ),
@@ -94,12 +94,12 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                     ),
                                   DataRow(
                                     cells: <DataCell>[
-                                      DataCell(Text('Modified:')),
+                                      const DataCell(Text('Modified:')),
                                       DataCell(
                                         Text(
                                           DateFormat('MMM dd yyyy, HH:mm')
                                               .format(item.modTime),
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontFamily: 'RobotoMono',
                                           ),
                                         ),
@@ -109,12 +109,12 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                   if (item.accessTime != null)
                                     DataRow(
                                       cells: <DataCell>[
-                                        DataCell(Text('Accessed:')),
+                                        const DataCell(Text('Accessed:')),
                                         DataCell(
                                           Text(
                                             DateFormat('MMM dd yyyy, HH:mm')
                                                 .format(item.accessTime!),
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontFamily: 'RobotoMono',
                                             ),
                                           ),
@@ -124,10 +124,10 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                   if (item.fileSize != null)
                                     DataRow(
                                       cells: <DataCell>[
-                                        DataCell(Text('Size:')),
+                                        const DataCell(Text('Size:')),
                                         DataCell(Text(
                                           item.fileSizeString,
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontFamily: 'RobotoMono',
                                           ),
                                         )),
@@ -136,7 +136,7 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                   if (item.mode != null)
                                     DataRow(
                                       cells: <DataCell>[
-                                        DataCell(Text('File Mode:')),
+                                        const DataCell(Text('File Mode:')),
                                         DataCell(
                                           model is RemoteInterface
                                               ? InkWell(
@@ -150,7 +150,7 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                                   ),
                                                   onTap: () async {
                                                     final newMode =
-                                                        await commonDialogs
+                                                        await common_dialogs
                                                             .modeSetDialog(
                                                       context: context,
                                                       initialMode: item.mode!,
@@ -165,7 +165,7 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                                 )
                                               : Text(
                                                   item.fileModeString,
-                                                  style: TextStyle(
+                                                  style: const TextStyle(
                                                     fontFamily: 'RobotoMono',
                                                   ),
                                                 ),

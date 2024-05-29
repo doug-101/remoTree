@@ -14,9 +14,9 @@ import '../model/host_data.dart';
 
 /// A class for editibng and new host connection data.
 class HostEdit extends StatefulWidget {
-  HostData? origHostData;
+  final HostData? origHostData;
 
-  HostEdit({super.key, this.origHostData});
+  const HostEdit({super.key, this.origHostData});
 
   @override
   State<HostEdit> createState() => _HostEditState();
@@ -37,8 +37,10 @@ class _HostEditState extends State<HostEdit> {
     }
   }
 
-  /// Save the host data at exit if applicable.
-  Future<bool> updateOnPop() async {
+  /// Prepare to close by validating and updating.
+  ///
+  /// Returns true if it's ok to close.
+  Future<bool> _handleClose() async {
     if (_cancelFlag) return true;
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -63,7 +65,7 @@ class _HostEditState extends State<HostEdit> {
           icon: const Icon(Icons.check_circle),
           tooltip: 'Save the host data',
           onPressed: () async {
-            if (await updateOnPop()) {
+            if (await _handleClose() && context.mounted) {
               Navigator.pop(context, null);
             }
           },
@@ -81,7 +83,15 @@ class _HostEditState extends State<HostEdit> {
       ),
       body: Form(
         key: _formKey,
-        onWillPop: updateOnPop,
+        canPop: false,
+        onPopInvoked: (bool didPop) async {
+          if (!didPop && await _handleClose()) {
+            // Pop manually (bypass canPop) if update is complete.
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            }
+          }
+        },
         child: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Center(
@@ -90,7 +100,8 @@ class _HostEditState extends State<HostEdit> {
               child: ListView(
                 children: <Widget>[
                   TextFormField(
-                    decoration: InputDecoration(labelText: 'Display Name'),
+                    decoration:
+                        const InputDecoration(labelText: 'Display Name'),
                     autofocus: true,
                     initialValue: widget.origHostData?.displayName,
                     validator: (String? text) {
@@ -106,7 +117,7 @@ class _HostEditState extends State<HostEdit> {
                     },
                   ),
                   TextFormField(
-                    decoration: InputDecoration(labelText: 'User Name'),
+                    decoration: const InputDecoration(labelText: 'User Name'),
                     initialValue: widget.origHostData?.userName,
                     validator: (String? text) {
                       if (text != null && text.isEmpty) {
@@ -121,7 +132,7 @@ class _HostEditState extends State<HostEdit> {
                     },
                   ),
                   TextFormField(
-                    decoration: InputDecoration(labelText: 'Address'),
+                    decoration: const InputDecoration(labelText: 'Address'),
                     autofocus: true,
                     initialValue: widget.origHostData?.address,
                     validator: (String? text) {
@@ -160,7 +171,7 @@ class _HostEditState extends State<HostEdit> {
                             ],
                             title: 'Add Key',
                           );
-                          if (method != null) {
+                          if (method != null && context.mounted) {
                             final interfaceModel = Provider.of<RemoteInterface>(
                               context,
                               listen: false,
@@ -182,6 +193,7 @@ class _HostEditState extends State<HostEdit> {
                               String? passphrase;
                               String? passphraseMatch;
                               do {
+                                if (!context.mounted) return;
                                 passphrase = await textDialog(
                                   context: context,
                                   title: 'Passphrase',
@@ -195,7 +207,7 @@ class _HostEditState extends State<HostEdit> {
                                 }
                                 if (passphrase.isEmpty) {
                                   passphraseMatch = '';
-                                } else {
+                                } else if (context.mounted) {
                                   passphraseMatch = await textDialog(
                                     context: context,
                                     title: 'Passphrase Match',
@@ -221,11 +233,12 @@ class _HostEditState extends State<HostEdit> {
                                 listen: false,
                               );
                               await localModel.refreshFiles();
+                              if (!context.mounted) return;
                               final FileItem? fileItem = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) {
-                                    return FileChoice(
+                                    return const FileChoice(
                                       title: 'Select key file',
                                     );
                                   },

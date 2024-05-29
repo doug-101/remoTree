@@ -63,6 +63,7 @@ class SortRule {
   }
 
   /// Return a human-readable string for the value.
+  @override
   String toString() {
     return '${sortType.name[0].toUpperCase()}${sortType.name.substring(1)}, '
         '${sortDirection.name[0].toUpperCase()}'

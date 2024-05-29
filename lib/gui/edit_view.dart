@@ -4,7 +4,7 @@
 // Free software, GPL v2 or later.
 
 import 'package:flutter/material.dart';
-import 'common_dialogs.dart' as commonDialogs;
+import 'common_dialogs.dart' as common_dialogs;
 import '../model/file_interface.dart';
 import '../model/file_item.dart';
 
@@ -13,7 +13,7 @@ class EditView extends StatefulWidget {
   final FileInterface modelRef;
   final FileItem fileItem;
 
-  EditView({super.key, required this.modelRef, required this.fileItem});
+  const EditView({super.key, required this.modelRef, required this.fileItem});
 
   @override
   State<EditView> createState() => _EditViewState();
@@ -81,14 +81,16 @@ class _EditViewState extends State<EditView> {
         onPopInvoked: (bool didPop) async {
           if (didPop) return;
           if (isChanged) {
-            final closeOk = await commonDialogs.okCancelDialog(
+            final closeOk = await common_dialogs.okCancelDialog(
               context: context,
               title: 'Confirm Discard',
               label: 'Discard changes?',
             );
             if (closeOk ?? false) {
               isChanged = false;
-              Navigator.pop(context);
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
             }
           } else {
             Navigator.pop(context);

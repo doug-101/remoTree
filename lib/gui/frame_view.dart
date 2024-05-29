@@ -10,21 +10,20 @@ import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
-import 'common_dialogs.dart' as commonDialogs;
+import 'common_dialogs.dart' as common_dialogs;
 import 'help_view.dart';
 import 'host_select.dart';
 import 'settings_edit.dart';
 import 'shell_view.dart';
 import 'tree_view.dart';
-import '../main.dart' show prefs, saveWindowGeo;
+import '../main.dart' show saveWindowGeo;
 import '../model/file_interface.dart';
-import '../model/file_item.dart';
 
 enum ViewType { localFiles, remoteFiles, terminal }
 
 /// The framework view that shows a bottom nav bar.
 class FrameView extends StatefulWidget {
-  FrameView({super.key});
+  const FrameView({super.key});
 
   @override
   State<FrameView> createState() => _FrameViewState();
@@ -100,12 +99,12 @@ class _FrameViewState extends State<FrameView> with WindowListener {
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => SettingEdit(),
+                    builder: (context) => const SettingEdit(),
                   ),
                 );
               },
             ),
-            Divider(),
+            const Divider(),
             ListTile(
               leading: const Icon(Icons.help_outline),
               title: const Text('Help View'),
@@ -114,7 +113,7 @@ class _FrameViewState extends State<FrameView> with WindowListener {
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => HelpView(),
+                    builder: (context) => const HelpView(),
                   ),
                 );
               },
@@ -124,12 +123,12 @@ class _FrameViewState extends State<FrameView> with WindowListener {
               title: const Text('About remoTree'),
               onTap: () {
                 Navigator.pop(context);
-                commonDialogs.aboutDialog(context: context);
+                common_dialogs.aboutDialog(context: context);
               },
             ),
             if (defaultTargetPlatform == TargetPlatform.linux ||
                 defaultTargetPlatform == TargetPlatform.macOS) ...[
-              Divider(),
+              const Divider(),
               ListTile(
                 leading: const Icon(Icons.highlight_off_outlined),
                 title: const Text('Quit'),
@@ -150,6 +149,7 @@ class _FrameViewState extends State<FrameView> with WindowListener {
                 Platform.isWindows ||
                 Platform.isMacOS ||
                 await Permission.manageExternalStorage.request().isGranted) {
+              if (!context.mounted) return;
               final model = Provider.of<LocalInterface>(context, listen: false);
               await model.initialFileLoad();
               _areLocalFilesRead = true;
@@ -168,15 +168,15 @@ class _FrameViewState extends State<FrameView> with WindowListener {
         },
         destinations: const <NavigationDestination>[
           NavigationDestination(
-            icon: const Icon(Icons.location_on),
+            icon: Icon(Icons.location_on),
             label: 'Local Files',
           ),
           NavigationDestination(
-            icon: const Icon(Icons.network_wifi_3_bar),
+            icon: Icon(Icons.network_wifi_3_bar),
             label: 'Remote Files',
           ),
           NavigationDestination(
-            icon: const Icon(Icons.terminal),
+            icon: Icon(Icons.terminal),
             label: 'Remote Terminal',
           ),
         ],
@@ -191,7 +191,7 @@ class _FrameViewState extends State<FrameView> with WindowListener {
               return MaterialPageRoute(
                 settings: settings,
                 builder: (BuildContext context) {
-                  return TreeView<LocalInterface>();
+                  return const TreeView<LocalInterface>();
                 },
               );
             },
@@ -207,14 +207,14 @@ class _FrameViewState extends State<FrameView> with WindowListener {
                   switch (settings.name) {
                     case '/':
                       if (model.isConnected) {
-                        return TreeView<RemoteInterface>();
+                        return const TreeView<RemoteInterface>();
                       } else {
-                        return HostSelect();
+                        return const HostSelect();
                       }
                     case '/remote':
-                      return TreeView<RemoteInterface>();
+                      return const TreeView<RemoteInterface>();
                     default:
-                      return HostSelect();
+                      return const HostSelect();
                   }
                 },
               );
@@ -231,14 +231,14 @@ class _FrameViewState extends State<FrameView> with WindowListener {
                   switch (settings.name) {
                     case '/':
                       if (model.isConnected) {
-                        return ShellView();
+                        return const ShellView();
                       } else {
-                        return HostSelect();
+                        return const HostSelect();
                       }
                     case '/remote':
-                      return ShellView();
+                      return const ShellView();
                     default:
-                      return HostSelect();
+                      return const HostSelect();
                   }
                 },
               );
