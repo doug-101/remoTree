@@ -214,9 +214,10 @@ class RemoteInterface extends FileInterface {
   SftpClient? _sftpClient;
   SSHSession? _sshShell;
   final outputLines = <String>[''];
+  static const maxLineLength = 100;
 
   RemoteInterface() {
-    sortRule = SortRule.fromPrefs();
+    super.sortRule = SortRule.fromPrefs();
   }
 
   bool get isConnected => sshClient != null;
@@ -301,6 +302,12 @@ class RemoteInterface extends FileInterface {
                 }
                 if (line.isNotEmpty) {
                   outputLines.last = const Utf8Codec().decode(line);
+                  while (outputLines.last.length > maxLineLength) {
+                    var nextLine = outputLines.last.substring(maxLineLength);
+                    outputLines.last =
+                        outputLines.last.substring(0, maxLineLength);
+                    outputLines.add(nextLine);
+                  }
                 }
                 outputLines.add('');
                 line.clear();
@@ -325,6 +332,11 @@ class RemoteInterface extends FileInterface {
             line.removeRange(0, line.length > 7 ? 7 : line.length);
           }
           outputLines.last = const Utf8Codec().decode(line);
+          while (outputLines.last.length > maxLineLength) {
+            var nextLine = outputLines.last.substring(maxLineLength);
+            outputLines.last = outputLines.last.substring(0, maxLineLength);
+            outputLines.add(nextLine);
+          }
           // End non-debug mode.
         } else {
           // Start debug mode.
@@ -535,7 +547,8 @@ class RemoteInterface extends FileInterface {
 class LocalInterface extends FileInterface {
   /// Load local file info at startup.
   LocalInterface() {
-    sortRule = SortRule.fromPrefs();
+    super.currentConnectName = 'Local';
+    super.sortRule = SortRule.fromPrefs();
   }
 
   Future<void> initialFileLoad() async {

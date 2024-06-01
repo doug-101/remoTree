@@ -22,7 +22,6 @@ class ShellView extends StatefulWidget {
 
 class _ShellViewState extends State<ShellView> {
   var widthPerChar = 0.0;
-  var maxCharPerLine = 100;
   final ScrollController _vertScrollController = ScrollController();
   final ScrollController _horizScrollController = ScrollController();
 
@@ -148,7 +147,8 @@ class _ShellViewState extends State<ShellView> {
                             controller: _horizScrollController,
                             child: SizedBox(
                               width: max(
-                                widthPerChar * maxCharPerLine + 10.0,
+                                widthPerChar * RemoteInterface.maxLineLength +
+                                    40.0,
                                 viewportConstraints.maxWidth,
                               ),
                               child: ListView.builder(
