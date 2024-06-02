@@ -66,6 +66,9 @@ Future<void> main(List<String> cmdLineArgs) async {
       offsetY = prefs.getDouble('win_pos_y');
     }
     // Setting the size twice (early and later) to work around linux problems.
+    if (!(prefs.getBool('show_title_bar') ?? true)) {
+      await windowManager.setTitleBarStyle(TitleBarStyle.hidden);
+    }
     await windowManager.setSize(size);
     windowManager.waitUntilReadyToShow(null, () async {
       await windowManager.setTitle('remoTree');
