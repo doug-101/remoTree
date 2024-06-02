@@ -104,6 +104,10 @@ class _ShellViewState extends State<ShellView> {
                         model.sendToShell('$escStr[H');
                       case LogicalKeyboardKey.end:
                         model.sendToShell('$escStr[F');
+                      case LogicalKeyboardKey.backspace:
+                        // Linux sends Ctrl-H as char above, but
+                        // Android needs this entry.
+                        model.sendToShell(String.fromCharCode(8));
                     }
                   }
                 }
