@@ -5,10 +5,12 @@
 
 import 'dart:io';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../model/file_interface.dart';
+import '../main.dart' show prefs;
 
 // The view for interacting with the shell.
 class ShellView extends StatefulWidget {
@@ -24,6 +26,7 @@ class _ShellViewState extends State<ShellView> {
   var widthPerChar = 0.0;
   final ScrollController _vertScrollController = ScrollController();
   final ScrollController _horizScrollController = ScrollController();
+  static final escStr = String.fromCharCode(0x1b);
 
   @override
   void initState() {
@@ -90,7 +93,6 @@ class _ShellViewState extends State<ShellView> {
                   if (char != null) {
                     model.sendToShell(char);
                   } else {
-                    final escStr = String.fromCharCode(0x1b);
                     switch (event.logicalKey) {
                       case LogicalKeyboardKey.arrowUp:
                         model.sendToShell('$escStr[A');
@@ -113,73 +115,143 @@ class _ShellViewState extends State<ShellView> {
                 }
                 return KeyEventResult.handled;
               },
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Scrollbar(
-                  controller: _vertScrollController,
-                  notificationPredicate: (notif) => notif.depth == 1,
-                  thumbVisibility: true,
-                  child: Scrollbar(
-                    controller: _horizScrollController,
-                    thumbVisibility: true,
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: LayoutBuilder(
-                        builder: (BuildContext context,
-                            BoxConstraints viewportConstraints) {
-                          if (widthPerChar == 0.0) {
-                            // Calculate width of a wide char for view width.
-                            final painter = TextPainter(
-                              text: const TextSpan(
-                                text: 'WWWWWWWWWW',
-                                style: TextStyle(
-                                  fontFamily: 'RobotoMono',
-                                ),
-                              ),
-                              textDirection: TextDirection.ltr,
-                            );
-                            painter.layout();
-                            widthPerChar = painter.width / 10;
-                          }
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (_vertScrollController.hasClients) {
-                              _vertScrollController.jumpTo(0.0);
-                            }
-                          });
-                          return SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            controller: _horizScrollController,
-                            child: SizedBox(
-                              width: max(
-                                widthPerChar * RemoteInterface.maxLineLength +
-                                    40.0,
-                                viewportConstraints.maxWidth,
-                              ),
-                              child: ListView.builder(
-                                controller: _vertScrollController,
-                                itemCount: model.outputLines.length,
-                                itemExtent: 30.0,
-                                shrinkWrap: true,
-                                reverse: true,
-                                // Scrolling and filling in reverse is more
-                                // reliable for scroll to the bottom.
-                                itemBuilder: (BuildContext context, int index) {
-                                  return Text(
-                                    model.outputLines[
-                                        model.outputLines.length - index - 1],
-                                    style: const TextStyle(
-                                      fontFamily: 'RobotoMono',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Scrollbar(
+                        controller: _vertScrollController,
+                        notificationPredicate: (notif) => notif.depth == 1,
+                        thumbVisibility: true,
+                        child: Scrollbar(
+                          controller: _horizScrollController,
+                          thumbVisibility: true,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: LayoutBuilder(
+                              builder: (BuildContext context,
+                                  BoxConstraints viewportConstraints) {
+                                if (widthPerChar == 0.0) {
+                                  // Calculate wide char width for view width.
+                                  final painter = TextPainter(
+                                    text: const TextSpan(
+                                      text: 'WWWWWWWWWW',
+                                      style: TextStyle(
+                                        fontFamily: 'RobotoMono',
+                                      ),
                                     ),
+                                    textDirection: TextDirection.ltr,
                                   );
-                                },
-                              ),
+                                  painter.layout();
+                                  widthPerChar = painter.width / 10;
+                                }
+                                WidgetsBinding.instance
+                                    .addPostFrameCallback((_) {
+                                  if (_vertScrollController.hasClients) {
+                                    _vertScrollController.jumpTo(0.0);
+                                  }
+                                });
+                                return SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  controller: _horizScrollController,
+                                  child: SizedBox(
+                                    width: max(
+                                      widthPerChar *
+                                              RemoteInterface.maxLineLength +
+                                          40.0,
+                                      viewportConstraints.maxWidth,
+                                    ),
+                                    child: ListView.builder(
+                                      controller: _vertScrollController,
+                                      itemCount: model.outputLines.length,
+                                      itemExtent: 30.0,
+                                      shrinkWrap: true,
+                                      reverse: true,
+                                      // Scrolling and filling in reverse is
+                                      // more reliable for scroll to the bottom.
+                                      itemBuilder:
+                                          (BuildContext context, int index) {
+                                        return Text(
+                                          model.outputLines[
+                                              model.outputLines.length -
+                                                  index -
+                                                  1],
+                                          style: const TextStyle(
+                                            fontFamily: 'RobotoMono',
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  if (prefs.getBool('show_extra_keys') ??
+                      (defaultTargetPlatform == TargetPlatform.android ||
+                          defaultTargetPlatform == TargetPlatform.iOS))
+                    Wrap(
+                      spacing: 4.0,
+                      runSpacing: 4.0,
+                      children: <Widget>[
+                        ActionChip(
+                          // A left arrow.
+                          label: const Text('\u2190'),
+                          onPressed: () {
+                            model.sendToShell('$escStr[D');
+                          },
+                        ),
+                        ActionChip(
+                          // A down arrow.
+                          label: const Text('\u2193'),
+                          onPressed: () {
+                            model.sendToShell('$escStr[B');
+                          },
+                        ),
+                        ActionChip(
+                          // An up arrow.
+                          label: const Text('\u2191'),
+                          onPressed: () {
+                            model.sendToShell('$escStr[A');
+                          },
+                        ),
+                        ActionChip(
+                          // A right arrow.
+                          label: const Text('\u2192'),
+                          onPressed: () {
+                            model.sendToShell('$escStr[C');
+                          },
+                        ),
+                        ActionChip(
+                          // A home key.
+                          label: const Text('\u219e'),
+                          onPressed: () {
+                            model.sendToShell('$escStr[H');
+                          },
+                        ),
+                        ActionChip(
+                          // An end key.
+                          label: const Text('\u21a0'),
+                          onPressed: () {
+                            model.sendToShell('$escStr[F');
+                          },
+                        ),
+                        ActionChip(
+                          // A tab key.
+                          label: const Text('\u21e5'),
+                          onPressed: () {
+                            model.sendToShell('\t');
+                          },
+                        ),
+                      ],
+                    ),
+                ],
               ),
             ),
           ),

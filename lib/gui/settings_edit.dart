@@ -128,6 +128,17 @@ class _SettingEditState extends State<SettingEdit> {
                       }
                     },
                   ),
+                  BoolFormField(
+                    initialValue: prefs.getBool('show_extra_keys') ??
+                        (defaultTargetPlatform == TargetPlatform.android ||
+                            defaultTargetPlatform == TargetPlatform.iOS),
+                    heading: 'Show buttons for special keys',
+                    onSaved: (bool? value) async {
+                      if (value != null) {
+                        await prefs.setBool('show_extra_keys', value);
+                      }
+                    },
+                  ),
                   TextFormField(
                     initialValue:
                         (prefs.getDouble('view_scale') ?? 1.0).toString(),
