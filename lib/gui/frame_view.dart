@@ -206,7 +206,7 @@ class _FrameViewState extends State<FrameView> with WindowListener {
                       Provider.of<RemoteInterface>(context, listen: false);
                   switch (settings.name) {
                     case '/':
-                      if (model.isConnected) {
+                      if (model.isClientConnected) {
                         return const TreeView<RemoteInterface>();
                       } else {
                         return const HostSelect();
@@ -230,7 +230,7 @@ class _FrameViewState extends State<FrameView> with WindowListener {
                 builder: (BuildContext context) {
                   switch (settings.name) {
                     case '/':
-                      if (model.isConnected) {
+                      if (model.isClientConnected) {
                         return const ShellView();
                       } else {
                         return const HostSelect();

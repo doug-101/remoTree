@@ -34,7 +34,7 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
     return Consumer<T>(
       builder: (context, model, child) {
         if (model is RemoteInterface) {
-          if ((model as RemoteInterface).isConnected) {
+          if ((model as RemoteInterface).isClientConnected) {
             // Connect if remote and not already done.
             (model as RemoteInterface).connectToSftp();
           } else {

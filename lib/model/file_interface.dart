@@ -220,7 +220,8 @@ class RemoteInterface extends FileInterface {
     super.sortRule = SortRule.fromPrefs();
   }
 
-  bool get isConnected => sshClient != null;
+  bool get isClientConnected => sshClient != null;
+  bool get isShellConnected => _sshShell != null;
 
   /// Make connection to given host.
   Future<void> connectToClient({
@@ -272,6 +273,8 @@ class RemoteInterface extends FileInterface {
   }
 
   /// Start the SSH client.
+  ///
+  /// Waits for connection to close before returning.
   Future<void> connectToShell() async {
     if (sshClient != null && _sshShell == null) {
       _sshShell = await sshClient!.shell(pty: const SSHPtyConfig(type: 'dumb'));
@@ -381,6 +384,9 @@ class RemoteInterface extends FileInterface {
       _sshShell!.stderr.listen((data) {
         assert(true, 'Received Standard Error Content');
       });
+      await _sshShell!.done;
+      _sshShell = null;
+      notifyListeners();
     }
   }
 

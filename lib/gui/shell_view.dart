@@ -23,7 +23,8 @@ class ShellView extends StatefulWidget {
 }
 
 class _ShellViewState extends State<ShellView> {
-  var widthPerChar = 0.0;
+  var _widthPerChar = 0.0;
+  var _shellWasClosed = false;
   final ScrollController _vertScrollController = ScrollController();
   final ScrollController _horizScrollController = ScrollController();
   static final escStr = String.fromCharCode(0x1b);
@@ -38,12 +39,23 @@ class _ShellViewState extends State<ShellView> {
     super.dispose();
   }
 
+  /// Connect to shell, then cleanup when it completes.
+  Future<void> makeShellConnection(RemoteInterface modelRef) async {
+    await modelRef.connectToShell();
+    _shellWasClosed = true;
+    if (Platform.isAndroid || Platform.isIOS) {
+      SystemChannels.textInput.invokeMethod('TextInput.hide');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<RemoteInterface>(
       builder: (context, model, child) {
-        if (model.isConnected) {
-          model.connectToShell();
+        if (model.isClientConnected) {
+          if (!model.isShellConnected && !_shellWasClosed) {
+            makeShellConnection(model);
+          }
         } else {
           // Close view if no connection (goes back to HostSelect).
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -133,7 +145,7 @@ class _ShellViewState extends State<ShellView> {
                             child: LayoutBuilder(
                               builder: (BuildContext context,
                                   BoxConstraints viewportConstraints) {
-                                if (widthPerChar == 0.0) {
+                                if (_widthPerChar == 0.0) {
                                   // Calculate wide char width for view width.
                                   final painter = TextPainter(
                                     text: const TextSpan(
@@ -145,7 +157,7 @@ class _ShellViewState extends State<ShellView> {
                                     textDirection: TextDirection.ltr,
                                   );
                                   painter.layout();
-                                  widthPerChar = painter.width / 10;
+                                  _widthPerChar = painter.width / 10;
                                 }
                                 WidgetsBinding.instance
                                     .addPostFrameCallback((_) {
@@ -158,7 +170,7 @@ class _ShellViewState extends State<ShellView> {
                                   controller: _horizScrollController,
                                   child: SizedBox(
                                     width: max(
-                                      widthPerChar *
+                                      _widthPerChar *
                                               RemoteInterface.maxLineLength +
                                           40.0,
                                       viewportConstraints.maxWidth,
@@ -193,6 +205,20 @@ class _ShellViewState extends State<ShellView> {
                       ),
                     ),
                   ),
+                  if (_shellWasClosed)
+                    Align(
+                      alignment: Alignment.center,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            _shellWasClosed = false;
+                            model.updateViews();
+                          },
+                          child: const Text('Reconnect'),
+                        ),
+                      ),
+                    ),
                   if (prefs.getBool('show_extra_keys') ??
                       (defaultTargetPlatform == TargetPlatform.android ||
                           defaultTargetPlatform == TargetPlatform.iOS))
