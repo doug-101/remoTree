@@ -142,10 +142,17 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                   // Delete command.
                   icon: const Icon(Icons.delete_outline),
                   tooltip: 'Delete Selected Items',
-                  onPressed: () {
-                    final selItems = List.of(selectedItems);
-                    selectedItems.clear();
-                    model.deleteItems(selItems);
+                  onPressed: () async {
+                    final doContinue = await common_dialogs.okCancelDialog(
+                      context: context,
+                      title: 'Confirm Delete',
+                      label: 'Delete ${selectedItems.length} object?',
+                    );
+                    if (doContinue ?? false) {
+                      final selItems = List.of(selectedItems);
+                      selectedItems.clear();
+                      model.deleteItems(selItems);
+                    }
                   },
                 ),
               ],
