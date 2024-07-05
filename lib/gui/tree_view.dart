@@ -156,13 +156,20 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                   // Paste command.
                   icon: const Icon(Icons.paste),
                   tooltip: 'Paste the Copied Items',
-                  onPressed: () {
+                  onPressed: () async {
                     final copyItemsTmp = List.of(copyItems);
                     final destination = selectedItems.first;
                     selectedItems.clear();
                     copyItems.clear();
-                    model.copyFileOperation(
-                        copyFromModel!, copyItemsTmp, destination);
+                    common_dialogs.waitDialog(context: context);
+                    await model.copyFileOperation(
+                      copyFromModel!,
+                      copyItemsTmp,
+                      destination,
+                    );
+                    if (context.mounted) {
+                      Navigator.of(context, rootNavigator: true).pop();
+                    }
                   },
                 ),
               if (selectedItems.isEmpty && copyItems.isEmpty) ...[

@@ -375,3 +375,18 @@ Future<void> aboutDialog({
     applicationIcon: Image.asset('assets/images/remotree_icon_48.png'),
   );
 }
+
+/// Show a wait/progress indicator.
+Future<void> waitDialog({
+  required BuildContext context,
+}) async {
+  showDialog(
+    barrierDismissible: false,
+    context: context,
+    builder: (context) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    },
+  );
+}
