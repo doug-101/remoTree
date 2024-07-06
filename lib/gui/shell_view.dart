@@ -90,6 +90,8 @@ class _ShellViewState extends State<ShellView> {
             ],
           ),
           body: GestureDetector(
+            // Respond to taps even on empty upper portions of the view.
+            behavior: HitTestBehavior.translucent,
             onTap: () {
               if (Platform.isAndroid || Platform.isIOS) {
                 setState(() {
