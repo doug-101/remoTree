@@ -143,6 +143,10 @@ class _FrameViewState extends State<FrameView> with WindowListener {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tabShown.index,
         onDestinationSelected: (int index) async {
+          final localModel =
+              Provider.of<LocalInterface>(context, listen: false);
+          final remoteModel =
+              Provider.of<RemoteInterface>(context, listen: false);
           if (ViewType.values[index] == ViewType.localFiles &&
               !_areLocalFilesRead) {
             if (Platform.isLinux ||
@@ -150,8 +154,7 @@ class _FrameViewState extends State<FrameView> with WindowListener {
                 Platform.isMacOS ||
                 await Permission.manageExternalStorage.request().isGranted) {
               if (!context.mounted) return;
-              final model = Provider.of<LocalInterface>(context, listen: false);
-              await model.initialFileLoad();
+              await localModel.initialFileLoad();
               _areLocalFilesRead = true;
             } else if (await Permission.manageExternalStorage
                 .request()
@@ -161,6 +164,11 @@ class _FrameViewState extends State<FrameView> with WindowListener {
           }
           if (Platform.isAndroid || Platform.isIOS) {
             SystemChannels.textInput.invokeMethod('TextInput.hide');
+          }
+          if (ViewType.values[index] == ViewType.localFiles) {
+            localModel.updateViews();
+          } else if (ViewType.values[index] == ViewType.remoteFiles) {
+            remoteModel.updateViews();
           }
           setState(() {
             _tabShown = ViewType.values[index];
