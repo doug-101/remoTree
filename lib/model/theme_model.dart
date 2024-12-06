@@ -43,8 +43,11 @@ class ThemeModel extends ChangeNotifier {
       backgroundColor: Colors.transparent,
       selectedColor: Colors.blueGrey.shade100,
     ),
+    cardTheme: CardTheme(
+      color: Colors.grey.shade100,
+    ),
     listTileTheme: ListTileThemeData(
-      tileColor: Colors.grey.shade50,
+      tileColor: Colors.grey.shade100,
       textColor: Colors.black,
       selectedTileColor: Colors.grey.shade400,
       selectedColor: Colors.black,
@@ -72,12 +75,15 @@ class ThemeModel extends ChangeNotifier {
     ),
     chipTheme: ChipThemeData(
       backgroundColor: Colors.transparent,
-      selectedColor: Colors.blueGrey.shade700,
+      selectedColor: Colors.blueGrey.shade600,
+    ),
+    cardTheme: CardTheme(
+      color: Colors.grey[850],
     ),
     listTileTheme: ListTileThemeData(
-      tileColor: Colors.grey.shade900,
+      tileColor: Colors.grey[850],
       textColor: Colors.white,
-      selectedTileColor: Colors.grey.shade700,
+      selectedTileColor: Colors.grey.shade600,
       selectedColor: Colors.white,
     ),
     useMaterial3: true,

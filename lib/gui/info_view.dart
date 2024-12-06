@@ -66,7 +66,9 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                         item.filename,
                                         style: TextStyle(
                                           fontFamily: 'RobotoMono',
-                                          color: Theme.of(context).primaryColor,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
                                         ),
                                       ),
                                       onTap: () async {
@@ -144,7 +146,8 @@ class InfoView<T extends FileInterface> extends StatelessWidget {
                                                     item.fileModeString,
                                                     style: TextStyle(
                                                       color: Theme.of(context)
-                                                          .primaryColor,
+                                                          .colorScheme
+                                                          .primary,
                                                       fontFamily: 'RobotoMono',
                                                     ),
                                                   ),

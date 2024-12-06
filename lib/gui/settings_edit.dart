@@ -81,6 +81,17 @@ class _SettingEditState extends State<SettingEdit> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings - remoTree'),
+        leading: IconButton(
+          icon: const Icon(Icons.check_circle),
+          tooltip: 'Save current settings and close',
+          onPressed: () async {
+            if (await _handleClose()) {
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
+            }
+          },
+        ),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.close),
