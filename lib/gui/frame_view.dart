@@ -167,8 +167,12 @@ class _FrameViewState extends State<FrameView> with WindowListener {
           }
           if (ViewType.values[index] == ViewType.localFiles) {
             localModel.updateViews();
-          } else if (ViewType.values[index] == ViewType.remoteFiles) {
+          } else {
             remoteModel.updateViews();
+            if (ViewType.values[index] == ViewType.terminal) {
+              // Request the shell view to get focus when built.
+              remoteModel.focusShellFlag = true;
+            }
           }
           setState(() {
             _tabShown = ViewType.values[index];

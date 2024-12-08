@@ -215,6 +215,8 @@ class RemoteInterface extends FileInterface {
   SSHSession? _sshShell;
   final outputLines = <String>[''];
   static const maxLineLength = 100;
+  // Set to true by frame view if the shell view needs to grab focus.
+  var focusShellFlag = false;
 
   RemoteInterface() {
     super.sortRule = SortRule.fromPrefs();
