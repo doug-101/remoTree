@@ -44,6 +44,5 @@ file.
 
 To compile remoTree from source, install the remoTree source from
 <https://github.com/doug-101/remoTree>.  Also install Flutter based on the
-instructions in <https://docs.flutter.dev/get-started/install/linux>.  The
-Android Setup is not required - just the Linux setup from the bottom of the
-page.
+instructions in <https://docs.flutter.dev/get-started/install> for the desired
+platform.

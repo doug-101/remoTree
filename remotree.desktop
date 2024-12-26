@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=0.1.0
+Name=remoTree
+GenericName=Remote File Manager
+Exec=remotree
+Icon=/opt/treetag/remotree_icon_64.png
+Terminal=false
+Categories=Network;RemoteAccess;
+Comment=a remote file manager for SSH

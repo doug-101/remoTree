@@ -39,3 +39,9 @@ remoTree should run on Windows 10 and above, 64-bit.  There is no support for
 Due to a lack of Macs for testing, remoTree on macOS is not supported.
 Assistance with creating a Mac port would be appreciated.
 
+---
+
+## iOS
+
+Due to a lack of hardware for development and testing, TreeTag on iOS is not
+supported.  Assistance with creating an iOS port would be appreciated.

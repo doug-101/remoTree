@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="default.css" />
+<link rel="icon" href="favicon.png" />
+
+<title>remoTree - How to Use</title>
+</head>
+
+<body>
+
+<div class="interior">
+
+<div class="title">
+<img src="logo.png" alt="remoTree" />
+</div>
+
+<div class="toplinks">
+<p>Version 0.1.0 (stable)</p>
+
+<p><a href="http://www.bellz.org/progs.html">Other Programs</a></p>
+<p><a href="http://www.bellz.org/contact.html">Contact Info</a></p>
+</div>
+
+<div class="navigation">
+<a href="index.html">Home&nbsp;/&nbsp;News</a>
+<a href="feature.html">Features</a>
+<a href="scrnsht.html">Screenshots</a>
+<a href="require.html">Requirements</a>
+<a href="download.html">Downloads</a>
+<a href="install.html">Installation</a>
+<span class="current-nav">How&nbsp;to&nbsp;Use</span>
+</div>
+
+<div class="content">
+
+<h1>How to Use remoTree</h1>
+
+<h2>Contents</h2>
+
+<ul>
+
+<li><a href="#connect">Remote Connections</a></li>
+<li><a href="#keys">Key Authentication</a></li>
+<li><a href="#files">File Management</a></li>
+<li><a href="#terminal">Remote Terminal</a></li>
+<li><a href="#settings">Settings</a></li>
+
+</ul>
+
+<a id="connect"></a> <h2>Remote Connections</h2>
+
+<p>remoTree shows lists of available host servers on the Remote Files and Remote
+Terminal tab views.  On the initial use, these lists will be blank.  Use the
+"+" button at the upper right to add server information.  The Display Name,
+User Name and Address are all required fields.  The Private Key button will be
+discussed in the next section.  Once those fields are entered, use the check
+button at the upper left to complete the host creation.</p>
+
+<p>A tap or click on a host in the list will attempt to make a connection.  It
+will prompt for a password if no authentication keys have been defined.  Once
+connected, depending on the active tab, the file view or the terminal view
+will be active.</p>
+
+<p>The menu button to the right of each host in the list can be used to edit or
+delete the host.</p>
+
+<a id="keys"></a> <h2>Key Authentication</h2>
+
+<p>When editing host information, the Add Private Key button can be used to set
+up key-based authentication.  The first option, Create on server, will use the
+ssh-keygen command on the server to create the keys.  It will prompt for a key
+passphrase - leave the field empty to skip the passphrase.  It will then
+automatically add the public key to the "~/.ssh/authorized_keys" file on the
+server and load the private key into remoTree.</p>
+
+<p>The second option, Load from file, will load an existing private key from the
+local file system.  It will assume that the public key has or will be copied
+to the server manually.</p>
+
+<a id="files"></a> <h2>File Management</h2>
+
+<p>Both the Local Files and Remote Files tab views support the following
+commands:</p>
+
+<ul>
+<li>Directories can be clicked or tapped to expand or collapse their contents.</li>
+<li>A long click or tap will toggle the selection of a directory or folder.</li>
+<li>The buttons in the file path at the top of the main view area will set
+higher level directories to become the new root directory.</li>
+<li>When nothing is selected:
+<ul>
+<li>The refresh button will update the view.</li>
+<li>The eye button will toggle showing hidden dot files.</li>
+<li>The sort button will allow the user to choose the sorting method.</li>
+<li>On the remote view, a logout button will disconnect from the server.</li>
+</ul></li>
+<li>When files or directories are selected:
+<ul>
+<li>If one directory is selected, an anchor button will make the selected
+directory the new root directory.</li>
+<li>If one text file is selected, a pencil icon will edit the file.</li>
+<li>The copy button will collect selected files and/or directories for file
+transfer.</li>
+<li>The "i" button can be used to show additional information about selected
+objects.  Links in the information view can be used for renames or file
+permission changes.</li>
+<li>The trash icon is used to delete selected files and/or directories.</li>
+<li>The back button at the upper left can be used to cancel a selection.</li>
+</ul></li>
+<li>When items have been marked for copying/file transfer:
+<ul>
+<li>If one directory is selected, a paste button will copy or transfer the
+marked items.  </li>
+<li>The back button at the upper left can be used to cancel the copy
+marking.</li>
+</ul></li>
+</ul>
+
+<a id="terminal"></a> <h2>Remote Terminal</h2>
+
+<p>If connected to a remote server, the Remote Terminal tab view will show a
+basic text-based terminal window.  This emulates a dumb terminal, so it does
+not support curses applications or other advanced terminal programs.</p>
+
+<a id="settings"></a> <h2>Settings</h2>
+
+<p>The "Settings" menu item allows for changing several default options. These
+settings are automatically stored so that remoTree will re-start with the
+settings last used.</p>
+
+<p>There are settings for the default file sorting method and the visibility of
+hidden dot files.  These only affect the conditions at startup - the controls
+on the views can be used to override these settings.</p>
+
+<p>The remaining options control appearances.  The view scale ratio can be set to
+make the content smaller or larger (useful for high-dpi displays). The window
+size and position will be restored from the previous session use if enabled.
+The final setting selects between light and dark color schemes.</p>
+
+</div>
+
+</div>
+
+</body>
+
+</html>
