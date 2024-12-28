@@ -49,7 +49,7 @@ class _HelpViewState extends State<HelpView> {
     return PopScope(
       // Avoid pop due to back button until page history is empty.
       canPop: _pageHistory.length <= 1,
-      onPopInvoked: (bool didPop) async {
+      onPopInvokedWithResult: (bool didPop, Object? result) async {
         if (!didPop) {
           _pageHistory.removeLast();
           _loadContent();

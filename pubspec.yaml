@@ -1,5 +1,5 @@
 name: remotree
-description: "A new Flutter project."
+description: "a remote file manager using SSH."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -38,9 +38,9 @@ dependencies:
   dartssh2: ^2.8.2
   external_path: ^2.0.1
   flutter_markdown_selectionarea: ^0.6.17
-  intl: ^0.19.0
+  intl: ^0.20.1
   package_info_plus: ^8.0.0
-  path: ^1.8.3
+  path: ^1.9.0
   path_provider: ^2.1.1
   permission_handler: ^11.3.0
   provider: ^6.1.1
@@ -58,7 +58,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

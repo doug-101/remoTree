@@ -78,7 +78,7 @@ class _EditViewState extends State<EditView> {
       ),
       body: PopScope(
         canPop: false,
-        onPopInvoked: (bool didPop) async {
+        onPopInvokedWithResult: (bool didPop, Object? result) async {
           if (didPop) return;
           if (isChanged) {
             final closeOk = await common_dialogs.okCancelDialog(

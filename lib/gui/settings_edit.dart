@@ -86,7 +86,7 @@ class _SettingEditState extends State<SettingEdit> {
           tooltip: 'Save current settings and close',
           onPressed: () async {
             if (await _handleClose()) {
-              if (mounted) {
+              if (context.mounted) {
                 Navigator.of(context).pop();
               }
             }
@@ -106,7 +106,7 @@ class _SettingEditState extends State<SettingEdit> {
       body: Form(
         key: _formKey,
         canPop: false,
-        onPopInvoked: (bool didPop) async {
+        onPopInvokedWithResult: (bool didPop, Object? result) async {
           if (!didPop && await _handleClose()) {
             // Pop manually (bypass canPop) if update is complete.
             if (context.mounted) {
