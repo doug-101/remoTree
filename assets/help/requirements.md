@@ -16,14 +16,20 @@ platforms.
 The following dependencies are required to build and run remoTree, but the
 install script will automatically install them using your native packaging
 system:
+
 * Clang
 * CMake
 * curl
 * git
 * GTK development headers
+* Mesa OpenGL utility library
 * Ninja build
 * pkg-config
+* standard C++ development headers
+* unzip
 * XZ development headers
+* XZ utilities
+* zip
 
 ---
 
