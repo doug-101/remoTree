@@ -22,13 +22,16 @@ class SortRule {
   SortRule.fromPrefs() {
     try {
       sortType = SortType.values.firstWhere(
-        (e) => e.name == (prefs.getString('sort_type') ?? ''),
-      );
-      sortDirection = SortDirection.values.firstWhere(
-        (e) => e.name == (prefs.getString('sort_direction') ?? ''),
+        (e) => e.name == (prefs.getString('sort_type') ?? 'name'),
       );
     } on StateError {
       sortType = SortType.name;
+    }
+    try {
+      sortDirection = SortDirection.values.firstWhere(
+        (e) => e.name == (prefs.getString('sort_direction') ?? 'ascending'),
+      );
+    } on StateError {
       sortDirection = SortDirection.ascending;
     }
   }
