@@ -1,6 +1,6 @@
 // file_interface.dart, models for remote and local file connections.
 // remoTree, an sftp-based remote file manager.
-// Copyright (c) 2024, Douglas W. Bell.
+// Copyright (c) 2025, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
 import 'dart:convert' show Utf8Codec;
@@ -19,6 +19,8 @@ abstract class FileInterface extends ChangeNotifier {
   String? rootPath;
   final rootItems = <FileItem>[];
   late SortRule sortRule;
+
+  List<String> splitRootPath();
 
   Future<void> _fetchRootFiles();
 
@@ -47,15 +49,6 @@ abstract class FileInterface extends ChangeNotifier {
   /// Force an update of the views.
   void updateViews() {
     notifyListeners();
-  }
-
-  /// Return path elements for use in breadcrumb navigation.
-  List<String> splitRootPath() {
-    if (rootPath == null) return <String>[];
-    final parts = rootPath!.split('/');
-    // Use connection name for / directory.
-    parts[0] = currentConnectName!;
-    return parts;
   }
 
   /// Change to the new root path and reload contents.
@@ -407,6 +400,16 @@ class RemoteInterface extends FileInterface {
     }
   }
 
+  /// Return path elements for use in breadcrumb navigation.
+  @override
+  List<String> splitRootPath() {
+    if (rootPath == null) return <String>[];
+    final parts = rootPath!.split('/');
+    // Use connection name for / directory.
+    parts[0] = currentConnectName!;
+    return parts;
+  }
+
   /// Retrieve file info at the root level.
   @override
   Future<void> _fetchRootFiles() async {
@@ -564,17 +567,27 @@ class LocalInterface extends FileInterface {
     notifyListeners();
   }
 
+  /// Return path elements for use in breadcrumb navigation.
+  @override
+  List<String> splitRootPath() {
+    if (rootPath == null) return <String>[];
+    final parts = rootPath!.split(Platform.pathSeparator);
+    // Use connection name for / directory.
+    parts[0] = currentConnectName!;
+    return parts;
+  }
+
   /// Retrieve file info at the root level.
   @override
   Future<void> _fetchRootFiles() async {
     if (rootPath == null) {
       if (Platform.isAndroid) {
-        // Use ExternalPath, since path_provider just gives loacal app dirs.
+        // Use ExternalPath, since path_provider just gives local app dirs.
         rootPath = (await ExternalPath.getExternalStorageDirectories())[0];
       }
       // Use app directory if external storage isn't available.
       rootPath ??= (await getApplicationDocumentsDirectory()).path;
-      if (rootPath!.endsWith('/')) {
+      if (rootPath!.endsWith(Platform.pathSeparator)) {
         // Remove trailing separator to make usable in [splitRootPath].
         rootPath = rootPath!.substring(0, rootPath!.length - 1);
       }
@@ -604,7 +617,8 @@ class LocalInterface extends FileInterface {
   @override
   Future<void> _writeFile(
       FileItem parent, String filename, Uint8List data) async {
-    File('${parent.fullPath}/$filename').writeAsBytes(data);
+    File('${parent.fullPath}${Platform.pathSeparator}$filename')
+        .writeAsBytes(data);
   }
 
   /// Create the given directory.
@@ -629,9 +643,11 @@ class LocalInterface extends FileInterface {
   @override
   Future<void> _renameFile(FileItem item, String newName) async {
     if (item.type == FileType.directory) {
-      await Directory(item.fullPath).rename('${item.path}/$newName');
+      await Directory(item.fullPath)
+          .rename('${item.path}${Platform.pathSeparator}$newName');
     } else {
-      await File(item.fullPath).rename('${item.path}/$newName');
+      await File(item.fullPath)
+          .rename('${item.path}${Platform.pathSeparator}$newName');
     }
   }
 
