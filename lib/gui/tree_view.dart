@@ -1,8 +1,9 @@
 // tree_view.dart, the main view showing a file tree.
 // remoTree, an sftp-based remote file manager.
-// Copyright (c) 2024, Douglas W. Bell.
+// Copyright (c) 2025, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -240,6 +241,9 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                         ? model.splitRootPath().length * 2 - 2
                         : 0,
                     itemBuilder: (BuildContext context, int index) {
+                      final separator = model is RemoteInterface
+                          ? '/'
+                          : Platform.pathSeparator;
                       final pathList = model.splitRootPath();
                       if (index.isEven) {
                         return InputChip(
@@ -249,9 +253,9 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                             if (index > 0) {
                               newPath = pathList
                                   .getRange(1, index ~/ 2 + 1)
-                                  .join('/');
+                                  .join(separator);
                             }
-                            model.changeRootPath('/$newPath');
+                            model.changeRootPath('$separator$newPath');
                           }),
                         );
                       } else {
@@ -260,10 +264,10 @@ class _TreeViewState<T extends FileInterface> extends State<TreeView<T>> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             index == 1
-                                ? ' :  / '
+                                ? ' :  $separator '
                                 : index == pathList.length * 2 - 3
-                                    ? ' / ${pathList.last}'
-                                    : ' / ',
+                                    ? ' $separator ${pathList.last}'
+                                    : ' $separator ',
                           ),
                         );
                       }

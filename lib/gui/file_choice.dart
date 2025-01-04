@@ -1,8 +1,9 @@
 // file_choice.dart, a view for selecting local files.
 // remoTree, an sftp-based remote file manager.
-// Copyright (c) 2024, Douglas W. Bell.
+// Copyright (c) 2025, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -101,9 +102,9 @@ class _FileChoiceState extends State<FileChoice> {
                             if (index > 0) {
                               newPath = pathList
                                   .getRange(1, index ~/ 2 + 1)
-                                  .join('/');
+                                  .join(Platform.pathSeparator);
                             }
-                            model.changeRootPath('/$newPath');
+                            model.changeRootPath('${Platform.pathSeparator}$newPath');
                           }),
                         );
                       } else {
@@ -112,10 +113,10 @@ class _FileChoiceState extends State<FileChoice> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             index == 1
-                                ? ' :  / '
+                                ? ' :  ${Platform.pathSeparator} '
                                 : index == pathList.length * 2 - 3
-                                    ? ' / ${pathList.last}'
-                                    : ' / ',
+                                    ? ' ${Platform.pathSeparator} ${pathList.last}'
+                                    : ' ${Platform.pathSeparator} ',
                           ),
                         );
                       }

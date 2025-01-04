@@ -152,6 +152,7 @@ abstract class FileInterface extends ChangeNotifier {
           file.filename,
           FileType.directory,
           DateTime.now(),
+          file.isRemote,
         );
         await _createDirectory(newDir.fullPath);
         await _copyFiles(sourceModel, file.children, newDir);
@@ -189,8 +190,12 @@ abstract class FileInterface extends ChangeNotifier {
 
   /// Assign link target path and then update the view.
   void assignLinkPath(FileItem link) async {
-    link.linkPath = await _linkPath(link);
-    notifyListeners();
+    try {
+      link.linkPath = await _linkPath(link);
+      notifyListeners();
+    } on FileSystemException {
+      // Ignore error, usually on Windows.
+    }
   }
 
   /// Reset stored items to initial values.
@@ -252,7 +257,7 @@ class RemoteInterface extends FileInterface {
         'ssh-keygen -t rsa -q -f "$tmpDir/id_rsa" -N "$passphrase"',
       );
       hostData.key = await readFileAsString(
-        FileItem(tmpDir, 'id_rsa', FileType.file, DateTime.now()),
+        FileItem(tmpDir, 'id_rsa', FileType.file, DateTime.now(), true),
       );
       await sshClient!.run(
         'mkdir -p ~/.ssh && chmod 700 ~/.ssh && '

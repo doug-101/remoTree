@@ -1,6 +1,6 @@
 // file_item.dart, contains data about each remote file.
 // remoTree, an sftp-based remote file manager.
-// Copyright (c) 2024, Douglas W. Bell.
+// Copyright (c) 2025, Douglas W. Bell.
 // Free software, GPL v2 or later.
 
 import 'dart:io';
@@ -15,6 +15,7 @@ class FileItem {
   String filename;
   final FileType type;
   late final DateTime modTime;
+  bool isRemote = false;
   // [fileSize] is null for a directory or link.
   int? fileSize;
   // [mode] and [accessTime] are null if not supported.
@@ -25,7 +26,7 @@ class FileItem {
   bool isOpen = false;
   int level = 0;
 
-  FileItem(this.path, this.filename, this.type, this.modTime);
+  FileItem(this.path, this.filename, this.type, this.modTime, this.isRemote);
 
   /// Constructor for local files.
   FileItem.fromFileEntity(FileSystemEntity file)
@@ -37,12 +38,17 @@ class FileItem {
           (Link _) => FileType.link,
           _ => FileType.other,
         } {
+    isRemote = false;
     final stat = file.statSync();
     modTime = stat.modified;
     if (type == FileType.file) {
       fileSize = stat.size;
     } else if (type == FileType.link) {
-      linkPath = (file as Link).targetSync();
+      try {
+        linkPath = (file as Link).targetSync();
+      } on FileSystemException {
+        // Ignore error, usually on Windows.
+      }
     }
     mode = stat.mode;
     accessTime = stat.accessed;
@@ -57,6 +63,7 @@ class FileItem {
           SftpFileType.symbolicLink => FileType.link,
           _ => FileType.other,
         } {
+    isRemote = true;
     modTime = DateTime.fromMillisecondsSinceEpoch(
       (fileInfo.attr.modifyTime ?? 0) * 1000,
     );
@@ -72,7 +79,8 @@ class FileItem {
   }
 
   /// The full path for this item.
-  String get fullPath => '$path/$filename';
+  String get fullPath =>
+      '$path${isRemote ? '/' : Platform.pathSeparator}$filename';
 
   /// Return the file size as a human readable string.
   ///
