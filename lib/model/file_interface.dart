@@ -590,8 +590,13 @@ class LocalInterface extends FileInterface {
         // Use ExternalPath, since path_provider just gives local app dirs.
         rootPath = (await ExternalPath.getExternalStorageDirectories())[0];
       }
-      // Use app directory if external storage isn't available.
-      rootPath ??= (await getApplicationDocumentsDirectory()).path;
+      try {
+        // Use app directory if external storage isn't available.
+        rootPath ??= (await getApplicationDocumentsDirectory()).path;
+      } on MissingPlatformDirectoryException {
+        // Can fail on Linux if XDG packages aren't installed.
+        rootPath = Platform.environment['HOME'] ?? Directory.current.path;
+      }
       if (rootPath!.endsWith(Platform.pathSeparator)) {
         // Remove trailing separator to make usable in [splitRootPath].
         rootPath = rootPath!.substring(0, rootPath!.length - 1);
